@@ -1,22 +1,36 @@
+/* app/globals.css */
 @import "tailwindcss";
 
+/* 定义一套看起来“很贵”的 DeFi 配色 */
 :root {
-  --background: #050505;
-  --foreground: #e5e5e5;
+  /* 背景：不再是死黑 #000000，而是深邃的藏青色 */
+  --background-rgb: 13, 17, 23; /* #0D1117 (GitHub Dark 风格) */
+  --foreground-rgb: 201, 209, 217; /* #C9D1D9 (柔和灰白) */
+  
+  /* 品牌主色：霓虹青/电光蓝 (用来提亮) */
+  --primary-glow: 0, 212, 255; /* #00D4FF */
+  
+  /* 卡片背景：半透明深蓝 */
+  --card-bg: rgba(22, 27, 34, 0.8);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: rgb(var(--background-rgb));
+  --color-foreground: rgb(var(--foreground-rgb));
   --font-sans: var(--font-noto-sans);
   --font-tech: var(--font-rajdhani);
 }
 
 body {
-  background-color: #050505;
-  color: #e5e5e5;
+  background-color: rgb(var(--background-rgb));
+  color: rgb(var(--foreground-rgb));
   overflow-x: hidden;
   font-family: var(--font-noto-sans), sans-serif;
+  
+  /* 加一点稍微带蓝色的环境光，摆脱“灵堂感” */
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(0, 212, 255, 0.08) 0%, transparent 50%),
+    linear-gradient(to bottom, rgb(13, 17, 23), rgb(13, 17, 23));
 }
 
 /* 科技感数字字体 */
@@ -24,59 +38,25 @@ body {
   font-family: var(--font-rajdhani), sans-serif;
 }
 
-/* 背景几何线条装饰 */
+/* 背景网格：改为极淡的青色，增加科技感 */
 .bg-grid-pattern {
-  background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-  linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.05) 1px, transparent 1px);
+  background-size: 50px 50px;
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  top: 0; left: 0; right: 0; bottom: 0;
   z-index: -1;
   pointer-events: none;
+  mask-image: radial-gradient(circle at center, black 40%, transparent 100%); /* 让网格只在中间显示 */
 }
 
-/* 磨砂玻璃效果类 */
+/* 玻璃卡片：加一点青色边框光晕 */
 .glass-card {
-  background: rgba(20, 20, 20, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
-}
-
-/* 管理员面板特殊样式 */
-.admin-card {
-  background: rgba(40, 20, 20, 0.8);
-  border: 1px solid rgba(255, 100, 100, 0.15);
-}
-
-/* 选中态的高亮边框 */
-.active-nav {
-  color: #ffffff;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-}
-
-/* 输入框去样式 */
-input:focus,
-select:focus {
-  outline: none;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3);
-}
-
-/* 隐藏滚动条但保留功能 */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-/* 安全区域底部内边距 */
-.pb-safe {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: var(--card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  /* 边框改为极细的青蓝色，不再是惨白 */
+  border: 1px solid rgba(56, 189, 248, 0.15); 
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
