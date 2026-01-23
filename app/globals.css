@@ -1,62 +1,89 @@
-/* app/globals.css */
 @import "tailwindcss";
 
-/* 定义一套看起来“很贵”的 DeFi 配色 */
 :root {
-  /* 背景：不再是死黑 #000000，而是深邃的藏青色 */
-  --background-rgb: 13, 17, 23; /* #0D1117 (GitHub Dark 风格) */
-  --foreground-rgb: 201, 209, 217; /* #C9D1D9 (柔和灰白) */
-  
-  /* 品牌主色：霓虹青/电光蓝 (用来提亮) */
-  --primary-glow: 0, 212, 255; /* #00D4FF */
-  
-  /* 卡片背景：半透明深蓝 */
-  --card-bg: rgba(22, 27, 34, 0.8);
+  /* 核心改动：不再是死黑，而是深邃的蓝黑 */
+  --background: #080c14; 
+  /* 文字稍微带一点点蓝的冷白，不刺眼 */
+  --foreground: #e0f2fe;
+  /* 定义一个霓虹主色变量，方便统一调用 */
+  --neon-cyan: #00f0ff;
 }
 
 @theme inline {
-  --color-background: rgb(var(--background-rgb));
-  --color-foreground: rgb(var(--foreground-rgb));
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
   --font-sans: var(--font-noto-sans);
   --font-tech: var(--font-rajdhani);
 }
 
 body {
-  background-color: rgb(var(--background-rgb));
-  color: rgb(var(--foreground-rgb));
+  background-color: var(--background);
+  color: var(--foreground);
   overflow-x: hidden;
   font-family: var(--font-noto-sans), sans-serif;
-  
-  /* 加一点稍微带蓝色的环境光，摆脱“灵堂感” */
-  background-image: 
-    radial-gradient(circle at 50% 0%, rgba(0, 212, 255, 0.08) 0%, transparent 50%),
-    linear-gradient(to bottom, rgb(13, 17, 23), rgb(13, 17, 23));
+  /* 增加一个极淡的底部蓝色光晕，提升氛围感 */
+  background-image: radial-gradient(circle at 50% 100%, rgba(0, 240, 255, 0.05), transparent 40%);
+  background-attachment: fixed;
 }
 
 /* 科技感数字字体 */
 .font-tech {
   font-family: var(--font-rajdhani), sans-serif;
+  letter-spacing: 0.05em; /* 数字稍微拉开一点间距更高级 */
 }
 
-/* 背景网格：改为极淡的青色，增加科技感 */
+/* 背景几何线条 - 改为青色微光 */
 .bg-grid-pattern {
-  background-image: 
-    linear-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(56, 189, 248, 0.05) 1px, transparent 1px);
-  background-size: 50px 50px;
+  /* 线条改为淡淡的青色，不再是死白 */
+  background-image: linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+  linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px; /* 格子稍微放大 */
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: -1;
   pointer-events: none;
-  mask-image: radial-gradient(circle at center, black 40%, transparent 100%); /* 让网格只在中间显示 */
+  /* 增加遮罩，让网格在边缘消失，更自然 */
+  mask-image: radial-gradient(circle at center, black 60%, transparent 100%); 
 }
 
-/* 玻璃卡片：加一点青色边框光晕 */
+/* 磨砂玻璃效果 - 增加青色边框光晕 */
 .glass-card {
-  background: var(--card-bg);
+  background: rgba(15, 20, 30, 0.6); /* 稍微深一点的蓝底 */
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  /* 边框改为极细的青蓝色，不再是惨白 */
-  border: 1px solid rgba(56, 189, 248, 0.15); 
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  /* 边框带一点点青色，不仅是白 */
+  border: 1px solid rgba(0, 240, 255, 0.1);
+  /* 加上微弱的青色阴影 */
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.6), 
+              inset 0 0 20px rgba(0, 240, 255, 0.02);
 }
+
+/* 管理员面板 */
+.admin-card {
+  background: rgba(30, 10, 10, 0.8);
+  border: 1px solid rgba(255, 80, 80, 0.3);
+  box-shadow: 0 0 15px rgba(255, 0, 0, 0.1);
+}
+
+/* 选中态的高亮 - 强烈的霓虹发光 */
+.active-nav {
+  color: var(--neon-cyan);
+  text-shadow: 0 0 12px rgba(0, 240, 255, 0.6);
+  font-weight: 600;
+}
+
+/* 输入框聚焦效果 */
+input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 0 1px rgba(0, 240, 255, 0.4);
+}
+
+/* 工具类保持不变 */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
