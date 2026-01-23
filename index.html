@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ALX POOL - DApp</title>
+    
+    <!-- 1. Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. Alpine.js -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    
+    <!-- 3. Lucide Icons -->
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.320.0/dist/umd/lucide.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;500;700&family=Noto+Sans+SC:wght@300;400;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* 全局字体设置 */
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #050505;
+            color: #e5e5e5;
+            overflow-x: hidden;
+        }
+        
+        /* 科技感数字字体 */
+        .font-tech {
+            font-family: 'Rajdhani', sans-serif;
+        }
+
+        /* 背景几何线条装饰 */
+        .bg-grid-pattern {
+            background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* 磨砂玻璃效果类 */
+        .glass-card {
+            background: rgba(20, 20, 20, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 管理员面板特殊样式 */
+        .admin-card {
+            background: rgba(40, 20, 20, 0.8); /* 稍微偏红一点的深色，区分普通用户 */
+            border: 1px solid rgba(255, 100, 100, 0.15);
+        }
+
+        /* 选中态的高亮边框 */
+        .active-nav {
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        /* 输入框去样式 */
+        input:focus, select:focus {
+            outline: none;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.3);
+        }
+        
+        /* 隐藏滚动条但保留功能 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+
+    <script>
+        function appData() {
+            return {
+                currentTab: 'stake', // stake, news, mine, admin
+                lang: 'zh', // zh, en
+                walletConnected: false,
+                shortAddr: '0x12...89AB',
+                stakeInput: '',
+                
+                // 管理员表单数据
+                adminForm: {
+                    targetAddr: '',
+                    amount: ''
+                },
+
+                // 系统配置参数 (可由管理员动态修改)
+                config: {
+                    bonusRate: 0.5,         // 50% 奖励
+                    lockDays: 90,           // 3个月锁仓
+                    initialRate: 0.10,      // 首期释放 10%
+                    linearDays: 270         // 剩余按 270 天释放
+                },
+
+                // 翻译字典
+                i18n: {
+                    zh: {
+                        nav_stake: '质押',
+                        nav_news: '公告',
+                        nav_mine: '我的',
+                        connect_wallet: '连接钱包',
+                        total_staked: '当前全网总质押 (ALX)',
+                        base_apy: '基础收益率',
+                        lock_period: '锁仓周期',
+                        stake_title: '参与质押',
+                        input_placeholder: '输入质押数量',
+                        expected_total: '预计获得总额 (含奖励):',
+                        initial_release: '首期解锁 (3个月后):',
+                        daily_release: '每日释放 (后续270天):',
+                        rule_desc: '*规则：锁仓 {lock} 天后解锁 {rate}%，剩余部分在 {linear} 天内线性释放。',
+                        btn_stake: '立即质押',
+                        latest_news: '最新动态',
+                        view_all: '查看全部',
+                        account_status: '账户状态',
+                        connected: '已连接',
+                        not_connected: '未连接',
+                        pending_release: '待释放总量 (ALX)',
+                        claimable: '可提取 (ALX)',
+                        stake_records: '质押记录',
+                        no_records: '暂无质押记录',
+                        record_principal: '质押本金',
+                        record_return: '总收益',
+                        record_next: '下一次释放',
+                        status_active: '进行中',
+                        days_left: '天后结束',
+                        progress: '进度',
+                        admin_entry: '管理员后台',
+                        admin_title: '管理控制台',
+                        admin_manual_stake: '后台拨币 / 手动质押',
+                        admin_addr_placeholder: '用户钱包地址 (0x...)',
+                        admin_amount_placeholder: '拨币数量',
+                        admin_btn_submit: '确认执行',
+                        admin_params: '系统参数配置',
+                        param_bonus: '奖励比例 (0.5 = 50%)',
+                        param_lock: '锁仓天数',
+                        btn_save_config: '保存配置',
+                        toast_wallet_con: '钱包已连接',
+                        toast_wallet_dis: '钱包已断开',
+                        toast_login_first: '请先连接钱包',
+                        toast_valid_amount: '请输入有效数量',
+                        toast_stake_success: '质押成功！',
+                        toast_admin_success: '后台拨币成功！',
+                        toast_config_saved: '系统参数已更新！'
+                    },
+                    en: {
+                        nav_stake: 'Stake',
+                        nav_news: 'News',
+                        nav_mine: 'Mine',
+                        connect_wallet: 'Connect',
+                        total_staked: 'Total Value Locked (ALX)',
+                        base_apy: 'Base APY',
+                        lock_period: 'Lock Period',
+                        stake_title: 'Stake ALX',
+                        input_placeholder: 'Enter Amount',
+                        expected_total: 'Total Return (w/ Bonus):',
+                        initial_release: 'Initial Release (3 Mo):',
+                        daily_release: 'Daily Release (Next 270d):',
+                        rule_desc: '*Rule: Unlock {rate}% after {lock} days lock-up, linear release over {linear} days.',
+                        btn_stake: 'Stake Now',
+                        latest_news: 'Latest News',
+                        view_all: 'View All',
+                        account_status: 'Account Status',
+                        connected: 'Connected',
+                        not_connected: 'Not Connected',
+                        pending_release: 'Pending Release',
+                        claimable: 'Claimable',
+                        stake_records: 'Staking Records',
+                        no_records: 'No Records Found',
+                        record_principal: 'Principal',
+                        record_return: 'Total Return',
+                        record_next: 'Next Release',
+                        status_active: 'Active',
+                        days_left: 'days left',
+                        progress: 'Progress',
+                        admin_entry: 'Admin Panel',
+                        admin_title: 'Admin Console',
+                        admin_manual_stake: 'Manual Distribution / Stake',
+                        admin_addr_placeholder: 'User Wallet Address (0x...)',
+                        admin_amount_placeholder: 'Amount',
+                        admin_btn_submit: 'Execute Transaction',
+                        admin_params: 'System Configuration',
+                        param_bonus: 'Bonus Rate (0.5 = 50%)',
+                        param_lock: 'Lock Days',
+                        btn_save_config: 'Save Config',
+                        toast_wallet_con: 'Wallet Connected',
+                        toast_wallet_dis: 'Wallet Disconnected',
+                        toast_login_first: 'Please connect wallet',
+                        toast_valid_amount: 'Enter valid amount',
+                        toast_stake_success: 'Staked Successfully!',
+                        toast_admin_success: 'Distribution Successful!',
+                        toast_config_saved: 'Configuration Updated!'
+                    }
+                },
+
+                // 模拟数据
+                myAssets: {
+                    locked: '16,500.00',
+                    claimable: '125.50'
+                },
+
+                myRecords: [
+                    { 
+                        id: 1024, 
+                        amount: 10000, 
+                        totalReturn: 15000, 
+                        nextReleaseDate: '2026-04-12', 
+                        progress: 15, 
+                        daysLeft: 305,
+                        type: 'User' // User or Admin
+                    }
+                ],
+
+                newsList: [
+                    { id: 1, title: 'ALX 节点升级维护公告', title_en: 'ALX Node Upgrade Notice', date: '2026-01-20', desc: '为了提供更好的质押服务...' },
+                    { id: 2, title: '关于锁仓释放规则的说明', title_en: 'Lock-up & Release Rules', date: '2026-01-15', desc: '质押ALX可获得50%代币奖励...' },
+                ],
+
+                toast: { visible: false, message: '' },
+
+                initApp() {
+                    this.renderIcons();
+                    this.$watch('currentTab', () => setTimeout(() => this.renderIcons(), 50));
+                },
+                
+                renderIcons() {
+                    if (window.lucide) try { window.lucide.createIcons(); } catch(e) {}
+                },
+
+                // --- 辅助函数 ---
+                t(key) {
+                    let text = this.i18n[this.lang][key] || key;
+                    // 简单的模板替换
+                    text = text.replace('{lock}', this.config.lockDays);
+                    text = text.replace('{rate}', this.config.initialRate * 100);
+                    text = text.replace('{linear}', this.config.linearDays);
+                    return text;
+                },
+
+                toggleLang() {
+                    this.lang = this.lang === 'zh' ? 'en' : 'zh';
+                },
+
+                toggleWallet() {
+                    this.walletConnected = !this.walletConnected;
+                    this.showToast(this.walletConnected ? this.t('toast_wallet_con') : this.t('toast_wallet_dis'));
+                },
+
+                // --- 计算逻辑 ---
+                calcTotal() {
+                    if(!this.stakeInput) return 0;
+                    return (this.stakeInput * (1 + parseFloat(this.config.bonusRate))).toFixed(2);
+                },
+                calcInitialRelease() {
+                    const total = this.calcTotal();
+                    return (total * this.config.initialRate).toFixed(2);
+                },
+                calcDailyRelease() {
+                    const total = this.calcTotal();
+                    const remaining = total * (1 - this.config.initialRate);
+                    return (remaining / this.config.linearDays).toFixed(2);
+                },
+
+                // --- 业务逻辑 ---
+                handleStake() {
+                    if (!this.walletConnected) { return this.showToast(this.t('toast_login_first')); }
+                    if (!this.stakeInput || this.stakeInput <= 0) { return this.showToast(this.t('toast_valid_amount')); }
+
+                    this.addRecord(parseFloat(this.stakeInput), 'User');
+                    this.stakeInput = ''; 
+                    this.showToast(this.t('toast_stake_success'));
+                    setTimeout(() => { this.currentTab = 'mine'; }, 1000);
+                },
+
+                // 管理员：后台拨币
+                handleAdminDistribute() {
+                    if (!this.adminForm.amount || this.adminForm.amount <= 0) { return this.showToast(this.t('toast_valid_amount')); }
+                    
+                    // 这里模拟后台给用户添加记录
+                    this.addRecord(parseFloat(this.adminForm.amount), 'Admin');
+                    
+                    this.showToast(this.t('toast_admin_success'));
+                    this.adminForm.amount = '';
+                    this.adminForm.targetAddr = '';
+                },
+
+                // 通用添加记录逻辑
+                addRecord(amount, type) {
+                    const total = amount * (1 + parseFloat(this.config.bonusRate));
+                    const newRecord = {
+                        id: Math.floor(Math.random() * 10000),
+                        amount: amount,
+                        totalReturn: total,
+                        nextReleaseDate: 'Calculating...', 
+                        progress: 0,
+                        daysLeft: parseInt(this.config.lockDays) + parseInt(this.config.linearDays),
+                        type: type
+                    };
+
+                    this.myRecords.unshift(newRecord); 
+                    
+                    let currentLocked = parseFloat(this.myAssets.locked.replace(/,/g, ''));
+                    this.myAssets.locked = (currentLocked + total).toLocaleString();
+                },
+
+                saveConfig() {
+                    this.showToast(this.t('toast_config_saved'));
+                    // 实际项目中这里会调用合约接口修改参数
+                },
+
+                showToast(msg) {
+                    this.toast.message = msg;
+                    this.toast.visible = true;
+                    setTimeout(() => { this.toast.visible = false; }, 2000);
+                }
+            }
+        }
+    </script>
+</head>
+<body x-data="appData()" x-init="initApp()" class="antialiased min-h-screen pb-24">
+
+    <!-- 背景装饰 -->
+    <div class="bg-grid-pattern"></div>
+    <div class="fixed top-0 left-0 w-full h-64 bg-gradient-to-b from-blue-900/10 to-transparent pointer-events-none z-[-1]"></div>
+
+    <!-- 顶部导航 / Header -->
+    <header class="px-6 py-5 flex justify-between items-center glass-card sticky top-0 z-50 border-b border-white/5">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 border border-white rounded-full flex items-center justify-center bg-white/5">
+                <i data-lucide="hexagon" class="w-5 h-5"></i>
+            </div>
+            <span class="text-xl font-bold tracking-widest font-tech">ALX POOL</span>
+        </div>
+        
+        <div class="flex items-center gap-2">
+            <!-- 语言切换按钮 -->
+            <button @click="toggleLang" class="text-xs font-bold px-2 py-1 border border-white/20 rounded bg-white/5 hover:bg-white/10 transition">
+                <span :class="lang === 'zh' ? 'text-white' : 'text-gray-500'">中</span>
+                <span class="text-gray-600">/</span>
+                <span :class="lang === 'en' ? 'text-white' : 'text-gray-500'">EN</span>
+            </button>
+
+            <!-- 钱包按钮 -->
+            <div class="text-xs px-3 py-1 rounded-full border border-white/20 bg-white/5 flex items-center gap-1 cursor-pointer" @click="toggleWallet">
+                <div class="w-2 h-2 rounded-full" :class="walletConnected ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]' : 'bg-gray-500'"></div>
+                <span x-text="walletConnected ? shortAddr : t('connect_wallet')"></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区域 -->
+    <main class="p-5 space-y-6">
+
+        <!-- ======================= 1. 质押页面 (Stake) ======================= -->
+        <div x-show="currentTab === 'stake'" class="space-y-6">
+            
+            <div class="glass-card rounded-2xl p-6 relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 opacity-10">
+                    <i data-lucide="layers" class="w-32 h-32"></i>
+                </div>
+                <div class="relative z-10">
+                    <div class="text-gray-400 text-sm mb-1" x-text="t('total_staked')"></div>
+                    <div class="text-4xl font-bold font-tech text-white mb-4">8,245,100.00</div>
+                    <div class="flex gap-4">
+                        <div>
+                            <div class="text-xs text-gray-500" x-text="t('base_apy')"></div>
+                            <div class="text-lg font-tech text-emerald-400" x-text="(config.bonusRate * 100) + '%'"></div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-gray-500" x-text="t('lock_period')"></div>
+                            <div class="text-lg font-tech text-blue-400">
+                                <span x-text="config.lockDays"></span>d + <span x-text="config.linearDays"></span>d
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card rounded-2xl p-6 border-t-2 border-t-white/20">
+                <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+                    <i data-lucide="arrow-down-circle" class="w-5 h-5"></i>
+                    <span x-text="t('stake_title')"></span>
+                </h2>
+
+                <div class="relative mb-6">
+                    <input type="number" x-model.number="stakeInput" :placeholder="t('input_placeholder')" class="w-full bg-black/40 border border-white/10 rounded-xl py-4 pl-4 pr-16 text-xl font-tech text-white placeholder-gray-700 transition-all focus:border-white/30">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">ALX</span>
+                </div>
+
+                <div class="bg-white/5 rounded-xl p-4 mb-6 space-y-3 border border-dashed border-white/10">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-400" x-text="t('expected_total')"></span>
+                        <span class="font-tech text-white" x-text="calcTotal()">0</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-400" x-text="t('initial_release')"></span>
+                        <span class="font-tech text-emerald-400" x-text="calcInitialRelease()">0</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-400" x-text="t('daily_release')"></span>
+                        <span class="font-tech text-blue-400" x-text="calcDailyRelease()">0</span>
+                    </div>
+                    <div class="text-xs text-gray-600 mt-2 leading-relaxed" x-text="t('rule_desc')"></div>
+                </div>
+
+                <button @click="handleStake" class="w-full bg-white text-black font-bold py-4 rounded-xl text-lg hover:bg-gray-200 transition active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.2)]">
+                    <span x-text="t('btn_stake')"></span>
+                </button>
+            </div>
+
+            <div class="flex items-center justify-between px-2">
+                <span class="text-sm text-gray-400" x-text="t('latest_news')"></span>
+                <span class="text-xs text-white/50 cursor-pointer" @click="currentTab = 'news'">
+                    <span x-text="t('view_all')"></span> &rarr;
+                </span>
+            </div>
+            <div class="glass-card p-4 rounded-xl flex items-center gap-3">
+                <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                <div class="text-sm text-gray-300 truncate" x-text="lang === 'zh' ? newsList[0].title : newsList[0].title_en"></div>
+            </div>
+        </div>
+
+        <!-- ======================= 2. 公告页面 (News) ======================= -->
+        <div x-show="currentTab === 'news'" class="space-y-4" style="display: none;">
+            <h2 class="text-2xl font-bold px-2 font-tech tracking-wider">SYSTEM NEWS</h2>
+            <template x-for="item in newsList" :key="item.id">
+                <div class="glass-card p-5 rounded-xl border-l-4 border-l-white hover:bg-white/5 transition">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-bold text-white text-lg" x-text="lang === 'zh' ? item.title : item.title_en"></h3>
+                        <span class="text-xs text-gray-500 font-tech border border-white/10 px-2 py-1 rounded" x-text="item.date"></span>
+                    </div>
+                    <p class="text-sm text-gray-400 leading-relaxed" x-text="item.desc"></p>
+                </div>
+            </template>
+        </div>
+
+        <!-- ======================= 3. 我的页面 (Mine) ======================= -->
+        <div x-show="currentTab === 'mine'" class="space-y-6" style="display: none;">
+            
+            <div class="glass-card rounded-2xl p-6 bg-gradient-to-br from-white/10 to-transparent">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-12 h-12 rounded-full bg-gray-800 border border-white/20 flex items-center justify-center">
+                        <i data-lucide="user" class="text-white w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-400" x-text="t('account_status')"></div>
+                        <div class="font-bold" :class="walletConnected ? 'text-green-400' : 'text-gray-500'" x-text="walletConnected ? t('connected') : t('not_connected')"></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-black/30 p-3 rounded-lg">
+                        <div class="text-xs text-gray-500 mb-1" x-text="t('pending_release')"></div>
+                        <div class="text-xl font-tech font-bold" x-text="myAssets.locked"></div>
+                    </div>
+                    <div class="bg-black/30 p-3 rounded-lg">
+                        <div class="text-xs text-gray-500 mb-1" x-text="t('claimable')"></div>
+                        <div class="text-xl font-tech font-bold text-white" x-text="myAssets.claimable"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 管理员入口 -->
+            <button @click="currentTab = 'admin'" class="w-full py-3 rounded-xl border border-white/10 bg-white/5 text-gray-400 text-sm font-bold hover:bg-white/10 hover:text-white transition flex items-center justify-center gap-2">
+                <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                <span x-text="t('admin_entry')"></span>
+            </button>
+
+            <div>
+                <h3 class="text-sm font-bold text-gray-400 mb-3 px-2 uppercase tracking-wider" x-text="t('stake_records')"></h3>
+                
+                <div class="space-y-3">
+                    <template x-if="myRecords.length === 0">
+                        <div class="text-center py-10 text-gray-600">
+                            <i data-lucide="inbox" class="w-10 h-10 mx-auto mb-2 opacity-50"></i>
+                            <p class="text-sm" x-text="t('no_records')"></p>
+                        </div>
+                    </template>
+
+                    <template x-for="record in myRecords" :key="record.id">
+                        <div class="glass-card p-4 rounded-xl border border-white/5 relative overflow-hidden">
+                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-emerald-500 to-blue-500"></div>
+                            
+                            <div class="flex justify-between items-center mb-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-bold text-white">#<span x-text="record.id"></span></span>
+                                    <!-- 区分来源标签 -->
+                                    <span x-show="record.type === 'Admin'" class="text-[10px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded border border-purple-500/30">Admin Dist</span>
+                                </div>
+                                <span class="text-xs bg-white/10 px-2 py-1 rounded text-emerald-400" x-text="t('status_active')"></span>
+                            </div>
+                            
+                            <div class="grid grid-cols-3 gap-2 text-xs mb-3">
+                                <div>
+                                    <div class="text-gray-500 scale-90 origin-left" x-text="t('record_principal')"></div>
+                                    <div class="font-tech text-white text-base" x-text="record.amount"></div>
+                                </div>
+                                <div>
+                                    <div class="text-gray-500 scale-90 origin-left" x-text="t('record_return')"></div>
+                                    <div class="font-tech text-white text-base" x-text="record.totalReturn"></div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-gray-500 scale-90 origin-right" x-text="t('record_next')"></div>
+                                    <div class="font-tech text-white text-base" x-text="record.nextReleaseDate"></div>
+                                </div>
+                            </div>
+
+                            <div class="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
+                                <div class="bg-white h-full" :style="`width: ${record.progress}%`"></div>
+                            </div>
+                            <div class="flex justify-between text-[10px] text-gray-500 mt-1">
+                                <span><span x-text="t('progress')"></span> <span x-text="record.progress"></span>%</span>
+                                <span><span x-text="record.daysLeft"></span> <span x-text="t('days_left')"></span></span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- ======================= 4. 管理员后台 (Admin) ======================= -->
+        <div x-show="currentTab === 'admin'" class="space-y-6" style="display: none;">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xl font-bold flex items-center gap-2 text-orange-500">
+                    <i data-lucide="shield-check" class="w-6 h-6"></i>
+                    <span x-text="t('admin_title')"></span>
+                </h2>
+                <button @click="currentTab = 'mine'" class="text-xs bg-white/10 px-3 py-1 rounded text-gray-400 hover:text-white">Exit</button>
+            </div>
+
+            <!-- 功能1：手动拨币 -->
+            <div class="glass-card admin-card rounded-2xl p-6">
+                <h3 class="text-sm font-bold text-gray-300 mb-4 flex items-center gap-2">
+                    <i data-lucide="zap" class="w-4 h-4 text-yellow-500"></i>
+                    <span x-text="t('admin_manual_stake')"></span>
+                </h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs text-gray-500 mb-1 block">Target User</label>
+                        <input type="text" x-model="adminForm.targetAddr" :placeholder="t('admin_addr_placeholder')" class="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-sm text-white font-mono focus:border-orange-500/50">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500 mb-1 block">Amount (ALX)</label>
+                        <input type="number" x-model="adminForm.amount" :placeholder="t('admin_amount_placeholder')" class="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-sm text-white font-tech text-lg focus:border-orange-500/50">
+                    </div>
+                    <button @click="handleAdminDistribute" class="w-full bg-orange-600 hover:bg-orange-500 text-white font-bold py-3 rounded-lg shadow-lg shadow-orange-900/20 transition">
+                        <span x-text="t('admin_btn_submit')"></span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 功能2：参数配置 -->
+            <div class="glass-card rounded-2xl p-6 border border-white/5">
+                <h3 class="text-sm font-bold text-gray-300 mb-4 flex items-center gap-2">
+                    <i data-lucide="settings" class="w-4 h-4 text-blue-400"></i>
+                    <span x-text="t('admin_params')"></span>
+                </h3>
+
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-400" x-text="t('param_bonus')"></span>
+                        <input type="number" step="0.1" x-model="config.bonusRate" class="w-20 bg-black/40 border border-white/10 rounded p-1 text-center font-tech text-white">
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-400" x-text="t('param_lock')"></span>
+                        <input type="number" x-model="config.lockDays" class="w-20 bg-black/40 border border-white/10 rounded p-1 text-center font-tech text-white">
+                    </div>
+                    <button @click="saveConfig" class="w-full border border-white/10 bg-white/5 text-gray-300 py-2 rounded text-sm hover:bg-white/10 hover:text-white transition">
+                        <span x-text="t('btn_save_config')"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- 底部导航 (在 admin 页面隐藏) -->
+    <nav x-show="currentTab !== 'admin'" class="fixed bottom-0 w-full glass-card border-t border-white/10 pb-safe pt-2 px-6 z-50">
+        <div class="flex justify-between items-center max-w-md mx-auto h-16">
+            <button @click="currentTab = 'stake'" class="flex flex-col items-center gap-1 w-16 transition-all duration-300" :class="currentTab === 'stake' ? 'active-nav transform -translate-y-2' : 'text-gray-500'">
+                <div class="p-2 rounded-xl transition-colors" :class="currentTab === 'stake' ? 'bg-white/10' : ''">
+                    <i data-lucide="cpu" class="w-6 h-6"></i>
+                </div>
+                <span class="text-[10px] font-medium" x-text="t('nav_stake')"></span>
+            </button>
+
+            <button @click="currentTab = 'news'" class="flex flex-col items-center gap-1 w-16 transition-all duration-300" :class="currentTab === 'news' ? 'active-nav transform -translate-y-2' : 'text-gray-500'">
+                <div class="p-2 rounded-xl transition-colors" :class="currentTab === 'news' ? 'bg-white/10' : ''">
+                    <i data-lucide="bell" class="w-6 h-6"></i>
+                </div>
+                <span class="text-[10px] font-medium" x-text="t('nav_news')"></span>
+            </button>
+
+            <button @click="currentTab = 'mine'" class="flex flex-col items-center gap-1 w-16 transition-all duration-300" :class="currentTab === 'mine' ? 'active-nav transform -translate-y-2' : 'text-gray-500'">
+                <div class="p-2 rounded-xl transition-colors" :class="currentTab === 'mine' ? 'bg-white/10' : ''">
+                    <i data-lucide="wallet" class="w-6 h-6"></i>
+                </div>
+                <span class="text-[10px] font-medium" x-text="t('nav_mine')"></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Toast -->
+    <div x-show="toast.visible" 
+         class="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-white text-black px-6 py-3 rounded-full font-bold shadow-lg z-[60] flex items-center gap-2 whitespace-nowrap"
+         style="display: none;">
+        <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
+        <span x-text="toast.message"></span>
+    </div>
+</body>
+</html>
