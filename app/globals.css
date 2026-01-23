@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+:root {
+  --background: #050505;
+  --foreground: #e5e5e5;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-noto-sans);
+  --font-tech: var(--font-rajdhani);
+}
+
+body {
+  background-color: #050505;
+  color: #e5e5e5;
+  overflow-x: hidden;
+  font-family: var(--font-noto-sans), sans-serif;
+}
+
+/* 科技感数字字体 */
+.font-tech {
+  font-family: var(--font-rajdhani), sans-serif;
+}
+
+/* 背景几何线条装饰 */
+.bg-grid-pattern {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+  linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* 磨砂玻璃效果类 */
+.glass-card {
+  background: rgba(20, 20, 20, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* 管理员面板特殊样式 */
+.admin-card {
+  background: rgba(40, 20, 20, 0.8);
+  border: 1px solid rgba(255, 100, 100, 0.15);
+}
+
+/* 选中态的高亮边框 */
+.active-nav {
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+/* 输入框去样式 */
+input:focus,
+select:focus {
+  outline: none;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
+/* 隐藏滚动条但保留功能 */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* 安全区域底部内边距 */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
