@@ -14,7 +14,7 @@ ALX 质押池 DApp - 基于 Next.js 16 + React 19 构建的 Web3 质押应用。
 - **框架**: Next.js 16 (App Router)
 - **UI**: React 19 + Tailwind CSS 4
 - **状态管理**: Zustand
-- **Web3**: wagmi + viem + RainbowKit
+- **Web3**: wagmi + viem
 - **图标**: Lucide React
 - **字体**: Rajdhani (科技感数字) + Noto Sans SC (中文)
 
