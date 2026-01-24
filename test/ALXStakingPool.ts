@@ -240,14 +240,14 @@ describe("ALXStakingPool", async function () {
       await networkHelpers.time.increase(LOCK_DURATION);
       await pool.write.claim([1000n], { account: user1.account });
 
-      const stake1 = await pool.read.stakes([8888n]);
+      const stake1 = await pool.read.stakes([1000n]);
       const claimed1 = stake1[5];
 
       // 第二次提现：再过 135 天
       await networkHelpers.time.increase(135 * DAY);
       await pool.write.claim([1000n], { account: user1.account });
 
-      const stake2 = await pool.read.stakes([8888n]);
+      const stake2 = await pool.read.stakes([1000n]);
       const claimed2 = stake2[5];
 
       assert.ok(claimed2 > claimed1);
