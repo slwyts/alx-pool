@@ -32,12 +32,12 @@ contract ALXStakingPool is Ownable, ReentrancyGuard {
 
     // --- 状态变量 ---
     IERC20 public immutable stakingToken; // ALX 代币地址
-    uint256 public nextId = 8888;         // ID从8888开始
+    uint256 public nextId = 1000;         // ID从1000开始
 
     // 默认配置 (基点: 10000 = 100%)
     uint256 public bonusRate = 5000;          // 50% 奖励
     uint256 public initialUnlockRate = 1000;  // 10% 首期解锁
-    uint256 public lockDuration = 88 days;    // 88天 锁仓
+    uint256 public lockDuration = 90 days;    // 90天 锁仓（三个月）
     uint256 public linearDuration = 270 days; // 270天 线性释放
 
     // 存储映射
@@ -47,7 +47,7 @@ contract ALXStakingPool is Ownable, ReentrancyGuard {
     // --- 事件 (前端监听用) ---
     event Staked(address indexed user, uint256 indexed id, uint256 amount, uint256 totalReward);
     event Claimed(address indexed user, uint256 indexed id, uint256 amount);
-    event ConfigUpdated(uint256 bonus, uint256 lockDay, uint256 linearDay);
+    event ConfigUpdated(uint256 bonus, uint256 lockDay, uint256 linearDay, uint256 initialRate);
 
     // 构造函数：部署时传入 ALX 代币地址和合约 owner（项目方）
     // 注意：OpenZeppelin 的 Ownable 在当前版本需要传入初始 owner
@@ -113,12 +113,14 @@ contract ALXStakingPool is Ownable, ReentrancyGuard {
     function updateConfig(
         uint256 _bonusRate,
         uint256 _lockDays,
-        uint256 _linearDays
+        uint256 _linearDays,
+        uint256 _initialUnlockRate
     ) external onlyOwner {
         bonusRate = _bonusRate;
         lockDuration = _lockDays * 1 days;
         linearDuration = _linearDays * 1 days;
-        emit ConfigUpdated(_bonusRate, _lockDays, _linearDays);
+        initialUnlockRate = _initialUnlockRate;
+        emit ConfigUpdated(_bonusRate, _lockDays, _linearDays, _initialUnlockRate);
     }
 
     /**

@@ -43,3 +43,5 @@ next-env.d.ts
 #hardhat
 /cache
 /artifacts
+.hardhat-pid
+hardhat-node.log

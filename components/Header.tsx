@@ -3,14 +3,45 @@
 import { Hexagon } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { useTranslation } from '@/lib/hooks';
+import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { useEffect } from 'react';
 
 export default function Header() {
-  const { lang, toggleLang, walletConnected, shortAddr, toggleWallet, showToast } = useAppStore();
+  const { lang, toggleLang, showToast } = useAppStore();
   const { t } = useTranslation();
 
-  const handleToggleWallet = () => {
-    toggleWallet();
-    showToast(walletConnected ? t('toast_wallet_dis') : t('toast_wallet_con'));
+  const { address, isConnected } = useAccount();
+  const { connect, connectors } = useConnect();
+  const { disconnect } = useDisconnect();
+
+  // 同步钱包状态到 store
+  const { setWalletState } = useAppStore();
+  useEffect(() => {
+    setWalletState(isConnected, address);
+  }, [isConnected, address, setWalletState]);
+
+  const shortAddr = address
+    ? `${address.slice(0, 6)}...${address.slice(-4)}`
+    : '';
+
+  const handleToggleWallet = async () => {
+    if (isConnected) {
+      disconnect();
+      showToast(t('toast_wallet_dis'));
+    } else {
+      // 使用注入式钱包 (MetaMask 等)
+      const injectedConnector = connectors.find((c) => c.id === 'injected');
+      if (injectedConnector) {
+        try {
+          connect({ connector: injectedConnector });
+          showToast(t('toast_wallet_con'));
+        } catch {
+          showToast('Failed to connect wallet');
+        }
+      } else {
+        showToast('No wallet found');
+      }
+    }
   };
 
   return (
@@ -40,12 +71,12 @@ export default function Header() {
         >
           <div
             className={`w-2 h-2 rounded-full ${
-              walletConnected
+              isConnected
                 ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]'
                 : 'bg-gray-500'
             }`}
           />
-          <span>{walletConnected ? shortAddr : t('connect_wallet')}</span>
+          <span>{isConnected ? shortAddr : t('connect_wallet')}</span>
         </div>
       </div>
     </header>

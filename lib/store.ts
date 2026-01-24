@@ -12,8 +12,9 @@ interface AppState {
 
   // 钱包
   walletConnected: boolean;
+  walletAddress: `0x${string}` | undefined;
   shortAddr: string;
-  toggleWallet: () => void;
+  setWalletState: (connected: boolean, address: `0x${string}` | undefined) => void;
 
   // 配置
   config: Config;
@@ -44,8 +45,14 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   // 钱包
   walletConnected: false,
-  shortAddr: '0x12...89AB',
-  toggleWallet: () => set((state) => ({ walletConnected: !state.walletConnected })),
+  walletAddress: undefined,
+  shortAddr: '',
+  setWalletState: (connected, address) =>
+    set({
+      walletConnected: connected,
+      walletAddress: address,
+      shortAddr: address ? `${address.slice(0, 6)}...${address.slice(-4)}` : '',
+    }),
 
   // 配置
   config: {

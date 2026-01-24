@@ -1,18 +1,51 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Layers, ArrowDownCircle } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { useTranslation } from '@/lib/hooks';
 import { newsList } from '@/lib/data';
 import { useRouter } from 'next/navigation';
+import { useAccount } from 'wagmi';
+import {
+  usePoolConfig,
+  useALXBalance,
+  useALXAllowance,
+  useApproveALX,
+  useStake,
+  useTotalStaked,
+} from '@/lib/contracts/hooks';
+import { parseUnits } from 'viem';
 
 export default function StakePage() {
   const router = useRouter();
-  const { config, walletConnected, addRecord, showToast } = useAppStore();
+  const { showToast } = useAppStore();
   const { t, lang } = useTranslation();
   const [stakeInput, setStakeInput] = useState('');
+
+  const { address, isConnected } = useAccount();
+
+  // 合约数据
+  const poolConfig = usePoolConfig();
+  const { totalStakedFormatted } = useTotalStaked();
+  const { balance, balanceFormatted, refetch: refetchBalance } = useALXBalance(address);
+  const { allowance, refetch: refetchAllowance } = useALXAllowance(address);
+
+  // 合约操作
+  const { approveMax, isPending: isApproving, isSuccess: approveSuccess } = useApproveALX();
+  const { stake, isPending: isStaking, isSuccess: stakeSuccess } = useStake();
+
+  // 跟踪是否已处理授权成功
+  const approveHandledRef = useRef(false);
+
+  // 使用合约配置或默认值
+  const config = {
+    bonusRate: poolConfig.bonusRate ?? 0.5,
+    lockDays: poolConfig.lockDays ?? 88,
+    linearDays: poolConfig.linearDays ?? 270,
+    initialRate: poolConfig.initialRate ?? 0.1,
+  };
 
   // 计算函数
   const calcTotal = useCallback(() => {
@@ -31,9 +64,51 @@ export default function StakePage() {
     return (remaining / config.linearDays).toFixed(2);
   }, [calcTotal, config.initialRate, config.linearDays]);
 
+  // 检查是否需要授权
+  const needsApproval = useCallback(() => {
+    if (!stakeInput || !allowance) return true;
+    try {
+      const inputAmount = parseUnits(stakeInput, 18);
+      return allowance < inputAmount;
+    } catch {
+      return true;
+    }
+  }, [stakeInput, allowance]);
+
+  // 授权成功后自动发起质押
+  useEffect(() => {
+    if (approveSuccess && !approveHandledRef.current) {
+      approveHandledRef.current = true;
+      refetchAllowance();
+      showToast(t('toast_approve_success') || 'Approved successfully');
+      // 授权成功后自动质押
+      if (stakeInput && parseFloat(stakeInput) > 0) {
+        stake(stakeInput);
+      }
+    }
+  }, [approveSuccess, refetchAllowance, showToast, t, stakeInput, stake]);
+
+  // 重置授权处理标记（当开始新的授权时）
+  useEffect(() => {
+    if (isApproving) {
+      approveHandledRef.current = false;
+    }
+  }, [isApproving]);
+
+  // 质押成功后刷新
+  useEffect(() => {
+    if (stakeSuccess) {
+      refetchBalance();
+      refetchAllowance();
+      setStakeInput('');
+      showToast(t('toast_stake_success'));
+      setTimeout(() => router.push('/mine'), 1000);
+    }
+  }, [stakeSuccess, refetchBalance, refetchAllowance, showToast, t, router]);
+
   // 质押处理
   const handleStake = () => {
-    if (!walletConnected) {
+    if (!isConnected) {
       showToast(t('toast_login_first'));
       return;
     }
@@ -41,10 +116,28 @@ export default function StakePage() {
       showToast(t('toast_valid_amount'));
       return;
     }
-    addRecord(parseFloat(stakeInput), 'User');
-    setStakeInput('');
-    showToast(t('toast_stake_success'));
-    setTimeout(() => router.push('/mine'), 1000);
+
+    // 检查余额
+    if (balance && parseUnits(stakeInput, 18) > balance) {
+      showToast(t('toast_insufficient_balance') || 'Insufficient balance');
+      return;
+    }
+
+    // 需要授权
+    if (needsApproval()) {
+      approveMax();
+      return;
+    }
+
+    // 执行质押
+    stake(stakeInput);
+  };
+
+  const buttonText = () => {
+    if (isApproving) return t('btn_approving') || 'Approving...';
+    if (isStaking) return t('btn_staking') || 'Staking...';
+    if (needsApproval() && stakeInput) return t('btn_approve') || 'Approve ALX';
+    return t('btn_stake');
   };
 
   return (
@@ -56,7 +149,9 @@ export default function StakePage() {
         </div>
         <div className="relative z-10">
           <div className="text-gray-400 text-sm mb-1">{t('total_staked')}</div>
-          <div className="text-4xl font-bold font-tech text-white mb-4">8,245,100.00</div>
+          <div className="text-4xl font-bold font-tech text-white mb-4">
+            {parseFloat(totalStakedFormatted).toLocaleString()} ALX
+          </div>
           <div className="flex gap-4">
             <div>
               <div className="text-xs text-gray-500">{t('base_apy')}</div>
@@ -92,6 +187,19 @@ export default function StakePage() {
           </span>
         </div>
 
+        {/* 余额显示 */}
+        {isConnected && (
+          <div className="text-xs text-gray-500 mb-4 flex justify-between">
+            <span>{t('balance') || 'Balance'}: {parseFloat(balanceFormatted).toLocaleString()} ALX</span>
+            <button
+              onClick={() => setStakeInput(balanceFormatted)}
+              className="text-blue-400 hover:text-blue-300"
+            >
+              MAX
+            </button>
+          </div>
+        )}
+
         <div className="bg-white/5 rounded-xl p-4 mb-6 space-y-3 border border-dashed border-white/10">
           <div className="flex justify-between text-sm">
             <span className="text-gray-400">{t('expected_total')}</span>
@@ -110,9 +218,10 @@ export default function StakePage() {
 
         <button
           onClick={handleStake}
-          className="w-full bg-white text-black font-bold py-4 rounded-xl text-lg hover:bg-gray-200 transition active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+          disabled={isApproving || isStaking}
+          className="w-full bg-white text-black font-bold py-4 rounded-xl text-lg hover:bg-gray-200 transition active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {t('btn_stake')}
+          {buttonText()}
         </button>
       </div>
 

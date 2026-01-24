@@ -64,7 +64,7 @@ describe("ALXStakingPool", async function () {
       assert.equal(await pool.read.initialUnlockRate(), INITIAL_UNLOCK_RATE);
       assert.equal(await pool.read.lockDuration(), BigInt(LOCK_DURATION));
       assert.equal(await pool.read.linearDuration(), BigInt(LINEAR_DURATION));
-      assert.equal(await pool.read.nextId(), 8888n);
+      assert.equal(await pool.read.nextId(), 1000n);
     });
 
     it("代币地址为零应该失败", async function () {
@@ -96,7 +96,7 @@ describe("ALXStakingPool", async function () {
 
       await pool.write.stake([STAKE_AMOUNT], { account: user1.account });
 
-      const stake = await pool.read.stakes([8888n]);
+      const stake = await pool.read.stakes([1000n]);
       assert.equal(getAddress(stake[1]), getAddress(user1.account.address));
       assert.equal(stake[2], STAKE_AMOUNT);
       const expectedTotal = STAKE_AMOUNT + (STAKE_AMOUNT * BONUS_RATE) / BASIS_POINTS;
@@ -120,8 +120,8 @@ describe("ALXStakingPool", async function () {
       await pool.write.stake([STAKE_AMOUNT], { account: user1.account });
 
       const ids = await pool.read.getUserIds([user1.account.address]);
-      assert.equal(ids[0], 8888n);
-      assert.equal(ids[1], 8889n);
+      assert.equal(ids[0], 1000n);
+      assert.equal(ids[1], 1001n);
     });
 
     it("应该正确记录规则快照", async function () {
@@ -130,7 +130,7 @@ describe("ALXStakingPool", async function () {
 
       await pool.write.stake([STAKE_AMOUNT], { account: user1.account });
 
-      const stake = await pool.read.stakes([8888n]);
+      const stake = await pool.read.stakes([1000n]);
       assert.equal(stake[6], BigInt(LOCK_DURATION));
       assert.equal(stake[7], BigInt(LINEAR_DURATION));
       assert.equal(stake[8], INITIAL_UNLOCK_RATE);
@@ -147,7 +147,7 @@ describe("ALXStakingPool", async function () {
       await networkHelpers.time.increase(87 * DAY);
 
       await assert.rejects(
-        pool.write.claim([8888n], { account: user1.account }),
+        pool.write.claim([1000n], { account: user1.account }),
         /Nothing to claim yet/
       );
     });
@@ -166,14 +166,14 @@ describe("ALXStakingPool", async function () {
       const totalReward = STAKE_AMOUNT + (STAKE_AMOUNT * BONUS_RATE) / BASIS_POINTS;
       const expectedInitial = (totalReward * INITIAL_UNLOCK_RATE) / BASIS_POINTS;
 
-      const pendingBefore = await pool.read.getPendingAmount([8888n]);
+      const pendingBefore = await pool.read.getPendingAmount([1000n]);
       // 允许少量误差（因为 time.increase 可能有 1 秒偏差导致线性释放部分）
       const tolerance = parseEther("0.1");
       assert.ok(pendingBefore >= expectedInitial && pendingBefore <= expectedInitial + tolerance);
 
-      await pool.write.claim([8888n], { account: user1.account });
+      await pool.write.claim([1000n], { account: user1.account });
 
-      const stake = await pool.read.stakes([8888n]);
+      const stake = await pool.read.stakes([1000n]);
       assert.ok(stake[5] >= expectedInitial && stake[5] <= expectedInitial + tolerance);
     });
 
@@ -191,7 +191,7 @@ describe("ALXStakingPool", async function () {
       // 前进到锁仓期结束 + 135天（线性释放期一半）
       await networkHelpers.time.increase(LOCK_DURATION + 135 * DAY);
 
-      const pending = await pool.read.getPendingAmount([8888n]);
+      const pending = await pool.read.getPendingAmount([1000n]);
       const expectedLinear = (remaining * BigInt(135 * DAY)) / BigInt(LINEAR_DURATION);
       const expected = initial + expectedLinear;
 
@@ -212,7 +212,7 @@ describe("ALXStakingPool", async function () {
       // 前进到完全释放（88 + 270 天）
       await networkHelpers.time.increase(LOCK_DURATION + LINEAR_DURATION);
 
-      const pending = await pool.read.getPendingAmount([8888n]);
+      const pending = await pool.read.getPendingAmount([1000n]);
       assert.equal(pending, totalReward);
     });
 
@@ -224,7 +224,7 @@ describe("ALXStakingPool", async function () {
       await networkHelpers.time.increase(LOCK_DURATION);
 
       await assert.rejects(
-        pool.write.claim([8888n], { account: user2.account }),
+        pool.write.claim([1000n], { account: user2.account }),
         /Not owner/
       );
     });
@@ -238,14 +238,14 @@ describe("ALXStakingPool", async function () {
 
       // 第一次提现：锁仓期结束
       await networkHelpers.time.increase(LOCK_DURATION);
-      await pool.write.claim([8888n], { account: user1.account });
+      await pool.write.claim([1000n], { account: user1.account });
 
       const stake1 = await pool.read.stakes([8888n]);
       const claimed1 = stake1[5];
 
       // 第二次提现：再过 135 天
       await networkHelpers.time.increase(135 * DAY);
-      await pool.write.claim([8888n], { account: user1.account });
+      await pool.write.claim([1000n], { account: user1.account });
 
       const stake2 = await pool.read.stakes([8888n]);
       const claimed2 = stake2[5];
@@ -262,7 +262,7 @@ describe("ALXStakingPool", async function () {
 
         await pool.write.adminStakeForUser([user1.account.address, STAKE_AMOUNT]);
 
-        const stake = await pool.read.stakes([8888n]);
+        const stake = await pool.read.stakes([1000n]);
         assert.equal(getAddress(stake[1]), getAddress(user1.account.address));
         assert.equal(stake[2], STAKE_AMOUNT);
       });
@@ -283,18 +283,19 @@ describe("ALXStakingPool", async function () {
       it("管理员应该能更新配置", async function () {
         const { pool } = await networkHelpers.loadFixture(deployFixture);
 
-        await pool.write.updateConfig([8000n, 100n, 300n]);
+        await pool.write.updateConfig([8000n, 100n, 300n, 2000n]);
 
         assert.equal(await pool.read.bonusRate(), 8000n);
         assert.equal(await pool.read.lockDuration(), BigInt(100 * DAY));
         assert.equal(await pool.read.linearDuration(), BigInt(300 * DAY));
+        assert.equal(await pool.read.initialUnlockRate(), 2000n);
       });
 
       it("非管理员不能更新配置", async function () {
         const { pool } = await networkHelpers.loadFixture(deployFixture);
 
         await assert.rejects(
-          pool.write.updateConfig([8000n, 100n, 300n], { account: user1.account }),
+          pool.write.updateConfig([8000n, 100n, 300n, 2000n], { account: user1.account }),
           /OwnableUnauthorizedAccount/
         );
       });
@@ -305,9 +306,9 @@ describe("ALXStakingPool", async function () {
 
         await pool.write.stake([STAKE_AMOUNT], { account: user1.account });
 
-        await pool.write.updateConfig([8000n, 100n, 300n]);
+        await pool.write.updateConfig([8000n, 100n, 300n, 2000n]);
 
-        const stake = await pool.read.stakes([8888n]);
+        const stake = await pool.read.stakes([1000n]);
         assert.equal(stake[6], BigInt(LOCK_DURATION));
         assert.equal(stake[7], BigInt(LINEAR_DURATION));
       });
@@ -344,11 +345,11 @@ describe("ALXStakingPool", async function () {
       await setupUserStake(token, pool, user1.account.address, user1.account, STAKE_AMOUNT);
       await pool.write.stake([STAKE_AMOUNT], { account: user1.account });
 
-      const pending1 = await pool.read.getPendingAmount([8888n]);
+      const pending1 = await pool.read.getPendingAmount([1000n]);
       assert.equal(pending1, 0n);
 
       await networkHelpers.time.increase(LOCK_DURATION);
-      const pending2 = await pool.read.getPendingAmount([8888n]);
+      const pending2 = await pool.read.getPendingAmount([1000n]);
       const totalReward = STAKE_AMOUNT + (STAKE_AMOUNT * BONUS_RATE) / BASIS_POINTS;
       const expectedInitial = (totalReward * INITIAL_UNLOCK_RATE) / BASIS_POINTS;
       assert.equal(pending2, expectedInitial);
@@ -364,9 +365,9 @@ describe("ALXStakingPool", async function () {
 
       const ids = await pool.read.getUserIds([user1.account.address]);
       assert.equal(ids.length, 3);
-      assert.equal(ids[0], 8888n);
-      assert.equal(ids[1], 8889n);
-      assert.equal(ids[2], 8890n);
+      assert.equal(ids[0], 1000n);
+      assert.equal(ids[1], 1001n);
+      assert.equal(ids[2], 1002n);
     });
   });
 });
