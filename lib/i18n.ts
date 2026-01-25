@@ -80,7 +80,15 @@ export const i18n = {
     token_address: '代币地址',
     token_address_hint: '留空则默认提取 ALX 代币',
     withdraw_amount: '提现数量',
-    btn_emergency_withdraw: '执行紧急提现'
+    btn_emergency_withdraw: '执行紧急提现',
+    announcement_manage: '公告管理',
+    announcement_manage_desc: '创建、编辑、删除公告',
+    announcement_list: '公告列表',
+    new_announcement: '新建公告',
+    no_announcements: '暂无公告',
+    confirm_delete: '确定要删除吗？',
+    toast_fill_required: '请填写必填项',
+    back_to_admin: '返回管理'
   },
   en: {
     nav_stake: 'Stake',
@@ -163,7 +171,15 @@ export const i18n = {
     token_address: 'Token Address',
     token_address_hint: 'Leave empty to withdraw ALX token',
     withdraw_amount: 'Withdraw Amount',
-    btn_emergency_withdraw: 'Execute Emergency Withdraw'
+    btn_emergency_withdraw: 'Execute Emergency Withdraw',
+    announcement_manage: 'Announcements',
+    announcement_manage_desc: 'Create, edit, delete announcements',
+    announcement_list: 'Announcement List',
+    new_announcement: 'New',
+    no_announcements: 'No announcements',
+    confirm_delete: 'Are you sure to delete?',
+    toast_fill_required: 'Please fill required fields',
+    back_to_admin: 'Admin'
   }
 } as const;
 

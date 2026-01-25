@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { Layers, ArrowDownCircle } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { useTranslation } from '@/lib/hooks';
-import { newsList } from '@/lib/data';
 import { useRouter } from 'next/navigation';
 import { useAccount } from 'wagmi';
 import {
@@ -17,14 +16,32 @@ import {
   useTotalStaked,
 } from '@/lib/contracts/hooks';
 import { parseUnits } from 'viem';
+import type { Announcement } from '@/lib/redis';
 
 export default function StakePage() {
   const router = useRouter();
   const { showToast } = useAppStore();
   const { t, lang } = useTranslation();
   const [stakeInput, setStakeInput] = useState('');
+  const [latestNews, setLatestNews] = useState<Announcement | null>(null);
 
   const { address, isConnected } = useAccount();
+
+  // 获取最新公告
+  useEffect(() => {
+    const fetchLatestNews = async () => {
+      try {
+        const res = await fetch('/api/announcements');
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setLatestNews(data[0]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch announcements:', error);
+      }
+    };
+    fetchLatestNews();
+  }, []);
 
   // 合约数据
   const poolConfig = usePoolConfig();
@@ -235,7 +252,9 @@ export default function StakePage() {
       <div className="glass-card p-4 rounded-xl flex items-center gap-3">
         <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
         <div className="text-sm text-gray-300 truncate">
-          {lang === 'zh' ? newsList[0]?.title : newsList[0]?.title_en}
+          {latestNews
+            ? (lang === 'zh' ? latestNews.title : latestNews.title_en)
+            : (lang === 'zh' ? '暂无公告' : 'No announcements')}
         </div>
       </div>
     </div>

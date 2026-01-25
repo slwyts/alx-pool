@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShieldCheck, Zap, Settings, Loader2, AlertTriangle, Info, Download, Copy } from 'lucide-react';
+import { ShieldCheck, Zap, Settings, Loader2, AlertTriangle, Info, Download, Copy, Megaphone } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { useTranslation } from '@/lib/hooks';
 import { useAccount } from 'wagmi';
@@ -165,6 +165,25 @@ export default function AdminPage() {
           {t('back_to_mine')}
         </Link>
       </div>
+
+      {/* 公告管理入口 */}
+      <Link
+        href="/admin/announcements"
+        className="glass-card rounded-2xl p-6 border border-white/5 hover:border-orange-500/30 transition block"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-orange-500/20 flex items-center justify-center">
+              <Megaphone className="w-6 h-6 text-orange-400" />
+            </div>
+            <div>
+              <h3 className="font-bold text-white">{t('announcement_manage') || 'Announcement Management'}</h3>
+              <p className="text-sm text-gray-400">{t('announcement_manage_desc') || 'Create, edit, delete announcements'}</p>
+            </div>
+          </div>
+          <div className="text-gray-500">→</div>
+        </div>
+      </Link>
 
       {/* 合约信息 */}
       <div className="glass-card rounded-2xl p-6 border border-white/5">
