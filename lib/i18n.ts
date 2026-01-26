@@ -88,7 +88,11 @@ export const i18n = {
     no_announcements: '暂无公告',
     confirm_delete: '确定要删除吗？',
     toast_fill_required: '请填写必填项',
-    back_to_admin: '返回管理'
+    back_to_admin: '返回管理',
+    withdraw_fee_setting: '提现手续费设置',
+    fee_rate: '手续费率',
+    btn_set_fee: '设置手续费',
+    toast_fee_updated: '手续费已更新！'
   },
   en: {
     nav_stake: 'Stake',
@@ -179,7 +183,11 @@ export const i18n = {
     no_announcements: 'No announcements',
     confirm_delete: 'Are you sure to delete?',
     toast_fill_required: 'Please fill required fields',
-    back_to_admin: 'Admin'
+    back_to_admin: 'Admin',
+    withdraw_fee_setting: 'Withdraw Fee Setting',
+    fee_rate: 'Fee Rate',
+    btn_set_fee: 'Set Fee Rate',
+    toast_fee_updated: 'Fee rate updated!'
   }
 } as const;
 

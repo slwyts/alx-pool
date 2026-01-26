@@ -373,19 +373,19 @@ export default function AdminPage() {
       <div className="glass-card rounded-2xl p-6 border border-white/5">
         <h3 className="text-sm font-bold text-gray-300 mb-4 flex items-center gap-2">
           <Settings className="w-4 h-4 text-yellow-400" />
-          <span>{t('withdraw_fee_setting') || 'Withdraw Fee'}</span>
+          <span>{t('withdraw_fee_setting')}</span>
         </h3>
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-400">{t('fee_rate') || 'Fee Rate'} (0-1)</span>
+            <span className="text-xs text-gray-400">{t('fee_rate')} (%)</span>
             <input
               type="number"
-              step="0.01"
+              step="1"
               min="0"
-              max="1"
-              value={feeRate}
-              onChange={(e) => setFeeRate(parseFloat(e.target.value) || 0)}
+              max="100"
+              value={feeRate * 100}
+              onChange={(e) => setFeeRate((parseFloat(e.target.value) || 0) / 100)}
               className="w-24 bg-black/40 border border-white/10 rounded p-1 text-center font-tech text-white"
             />
           </div>
@@ -395,7 +395,7 @@ export default function AdminPage() {
             className="w-full border border-white/10 bg-white/5 text-gray-300 py-2 rounded text-sm hover:bg-white/10 hover:text-white transition flex items-center justify-center gap-2"
           >
             {isSettingFee && <Loader2 className="w-4 h-4 animate-spin" />}
-            {t('btn_set_fee') || 'Set Fee Rate'}
+            {t('btn_set_fee')}
           </button>
         </div>
       </div>

@@ -29,7 +29,7 @@ contract ALXStakingPool is Ownable, ReentrancyGuard {
     uint256 public initialUnlockRate = 1000;
     uint256 public lockDuration = 90 days;
     uint256 public linearDuration = 270 days;
-    uint256 public withdrawFeeRate = 0; // 提现手续费率 (基点, 100 = 1%)
+    uint256 public withdrawFeeRate = 500; // 提现手续费率 (基点, 500 = 5%)
 
     mapping(address => uint256[]) public userStakeIds;
     mapping(uint256 => StakeRecord) public stakes;
