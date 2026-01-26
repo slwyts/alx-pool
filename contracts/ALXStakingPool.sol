@@ -29,6 +29,7 @@ contract ALXStakingPool is Ownable, ReentrancyGuard {
     uint256 public initialUnlockRate = 1000;
     uint256 public lockDuration = 90 days;
     uint256 public linearDuration = 270 days;
+    uint256 public withdrawFeeRate = 0; // 提现手续费率 (基点, 100 = 1%)
 
     mapping(address => uint256[]) public userStakeIds;
     mapping(uint256 => StakeRecord) public stakes;
@@ -59,9 +60,12 @@ contract ALXStakingPool is Ownable, ReentrancyGuard {
         require(pending > 0, "Nothing to claim yet");
 
         record.claimedAmount = claimable;
-        stakingToken.safeTransfer(msg.sender, pending);
 
-        emit Claimed(msg.sender, _stakeId, pending);
+        uint256 fee = (pending * withdrawFeeRate) / 10000;
+        uint256 actualAmount = pending - fee;
+        stakingToken.safeTransfer(msg.sender, actualAmount);
+
+        emit Claimed(msg.sender, _stakeId, actualAmount);
     }
 
     function adminStakeForUser(address _user, uint256 _amount) external onlyOwner {
@@ -79,6 +83,11 @@ contract ALXStakingPool is Ownable, ReentrancyGuard {
         linearDuration = _linearDays * 1 days;
         initialUnlockRate = _initialUnlockRate;
         emit ConfigUpdated(_bonusRate, _lockDays, _linearDays, _initialUnlockRate);
+    }
+
+    function setWithdrawFeeRate(uint256 _feeRate) external onlyOwner {
+        require(_feeRate <= 10000, "Fee too high");
+        withdrawFeeRate = _feeRate;
     }
 
     function emergencyWithdraw(address _token, uint256 _amount) external onlyOwner {

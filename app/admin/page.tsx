@@ -12,6 +12,7 @@ import {
   useUpdateConfig,
   useEmergencyWithdraw,
   useALXBalance,
+  useSetWithdrawFeeRate,
 } from '@/lib/contracts/hooks';
 import { contractAddresses } from '@/lib/contracts';
 
@@ -35,6 +36,9 @@ export default function AdminPage() {
   const [withdrawToken, setWithdrawToken] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
 
+  // 手续费表单
+  const [feeRate, setFeeRate] = useState(0);
+
   // 合约操作
   const {
     adminStake,
@@ -54,6 +58,12 @@ export default function AdminPage() {
     isSuccess: withdrawSuccess,
   } = useEmergencyWithdraw();
 
+  const {
+    setWithdrawFeeRate,
+    isPending: isSettingFee,
+    isSuccess: setFeeSuccess,
+  } = useSetWithdrawFeeRate();
+
   // 合约池子余额
   const { balanceFormatted: poolBalance } = useALXBalance(contractAddresses.stakingPool);
 
@@ -63,7 +73,8 @@ export default function AdminPage() {
     if (poolConfig.lockDays !== undefined) setLockDays(poolConfig.lockDays);
     if (poolConfig.linearDays !== undefined) setLinearDays(poolConfig.linearDays);
     if (poolConfig.initialRate !== undefined) setInitialRate(poolConfig.initialRate);
-  }, [poolConfig.bonusRate, poolConfig.lockDays, poolConfig.linearDays, poolConfig.initialRate]);
+    if (poolConfig.withdrawFeeRate !== undefined) setFeeRate(poolConfig.withdrawFeeRate);
+  }, [poolConfig.bonusRate, poolConfig.lockDays, poolConfig.linearDays, poolConfig.initialRate, poolConfig.withdrawFeeRate]);
 
   // 操作成功回调
   useEffect(() => {
@@ -86,6 +97,12 @@ export default function AdminPage() {
       setWithdrawAmount('');
     }
   }, [withdrawSuccess, showToast, t]);
+
+  useEffect(() => {
+    if (setFeeSuccess) {
+      showToast(t('toast_fee_updated') || 'Fee rate updated');
+    }
+  }, [setFeeSuccess, showToast, t]);
 
   // 检查是否是 owner
   const isOwner =
@@ -121,6 +138,11 @@ export default function AdminPage() {
       return;
     }
     emergencyWithdraw(tokenAddr as `0x${string}`, withdrawAmount);
+  };
+
+  // 设置手续费
+  const handleSetFeeRate = () => {
+    setWithdrawFeeRate(feeRate);
   };
 
   // 复制地址
@@ -323,7 +345,7 @@ export default function AdminPage() {
       {/* 当前配置显示 */}
       <div className="glass-card rounded-2xl p-4 border border-white/5">
         <h4 className="text-xs text-gray-500 mb-2">{t('current_config')}</h4>
-        <div className="grid grid-cols-4 gap-2 text-xs">
+        <div className="grid grid-cols-5 gap-2 text-xs">
           <div>
             <div className="text-gray-600">Bonus</div>
             <div className="font-tech text-white">{(poolConfig.bonusRate ?? 0) * 100}%</div>
@@ -340,6 +362,41 @@ export default function AdminPage() {
             <div className="text-gray-600">Initial</div>
             <div className="font-tech text-white">{(poolConfig.initialRate ?? 0) * 100}%</div>
           </div>
+          <div>
+            <div className="text-gray-600">Fee</div>
+            <div className="font-tech text-white">{(poolConfig.withdrawFeeRate ?? 0) * 100}%</div>
+          </div>
+        </div>
+      </div>
+
+      {/* 提现手续费设置 */}
+      <div className="glass-card rounded-2xl p-6 border border-white/5">
+        <h3 className="text-sm font-bold text-gray-300 mb-4 flex items-center gap-2">
+          <Settings className="w-4 h-4 text-yellow-400" />
+          <span>{t('withdraw_fee_setting') || 'Withdraw Fee'}</span>
+        </h3>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400">{t('fee_rate') || 'Fee Rate'} (0-1)</span>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              max="1"
+              value={feeRate}
+              onChange={(e) => setFeeRate(parseFloat(e.target.value) || 0)}
+              className="w-24 bg-black/40 border border-white/10 rounded p-1 text-center font-tech text-white"
+            />
+          </div>
+          <button
+            onClick={handleSetFeeRate}
+            disabled={isSettingFee}
+            className="w-full border border-white/10 bg-white/5 text-gray-300 py-2 rounded text-sm hover:bg-white/10 hover:text-white transition flex items-center justify-center gap-2"
+          >
+            {isSettingFee && <Loader2 className="w-4 h-4 animate-spin" />}
+            {t('btn_set_fee') || 'Set Fee Rate'}
+          </button>
         </div>
       </div>
 

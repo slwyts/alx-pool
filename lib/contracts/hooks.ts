@@ -49,6 +49,12 @@ export function usePoolConfig() {
     functionName: "owner",
   });
 
+  const { data: withdrawFeeRate } = useReadContract({
+    address: contractAddresses.stakingPool,
+    abi: stakingPoolAbi,
+    functionName: "withdrawFeeRate",
+  });
+
   return {
     // 奖励比例 (基点 -> 小数, 5000 -> 0.5)
     bonusRate: bonusRate ? Number(bonusRate) / 10000 : undefined,
@@ -60,6 +66,8 @@ export function usePoolConfig() {
     initialRate: initialUnlockRate ? Number(initialUnlockRate) / 10000 : undefined,
     // 合约 owner
     owner: owner as `0x${string}` | undefined,
+    // 提现手续费率 (基点 -> 小数)
+    withdrawFeeRate: withdrawFeeRate ? Number(withdrawFeeRate) / 10000 : undefined,
   };
 }
 
@@ -317,4 +325,24 @@ export function useEmergencyWithdraw() {
   };
 
   return { emergencyWithdraw, hash, isPending, isConfirming, isSuccess, error };
+}
+
+/** 管理员设置提现手续费率 */
+export function useSetWithdrawFeeRate() {
+  const { writeContract, data: hash, isPending, error } = useWriteContract();
+
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+
+  const setWithdrawFeeRate = (feeRate: number) => {
+    // feeRate: 小数 -> 基点 (0.1 -> 1000)
+    const feeRateBps = BigInt(Math.round(feeRate * 10000));
+    writeContract({
+      address: contractAddresses.stakingPool,
+      abi: stakingPoolAbi,
+      functionName: "setWithdrawFeeRate",
+      args: [feeRateBps],
+    });
+  };
+
+  return { setWithdrawFeeRate, hash, isPending, isConfirming, isSuccess, error };
 }
