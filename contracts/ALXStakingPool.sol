@@ -23,6 +23,7 @@ contract ALXStakingPool is Ownable, ReentrancyGuard {
 
     IERC20 public immutable stakingToken;
     uint256 public nextId = 1000;
+    uint256 public totalStaked;
 
     uint256 public bonusRate = 5000;
     uint256 public initialUnlockRate = 1000;
@@ -101,6 +102,7 @@ contract ALXStakingPool is Ownable, ReentrancyGuard {
         });
 
         userStakeIds[_user].push(nextId);
+        totalStaked += _amount;
         emit Staked(_user, nextId, _amount, total);
 
         nextId++;

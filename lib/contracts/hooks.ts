@@ -65,19 +65,18 @@ export function usePoolConfig() {
 
 // ==================== 用户相关 ====================
 
-/** 读取质押池总质押量（合约中的 ALX 余额） */
+/** 读取质押池总质押量 */
 export function useTotalStaked() {
   const { data, refetch, isLoading } = useReadContract({
-    address: contractAddresses.alxToken,
-    abi: tokenAbi,
-    functionName: "balanceOf",
-    args: [contractAddresses.stakingPool],
+    address: contractAddresses.stakingPool,
+    abi: stakingPoolAbi,
+    functionName: "totalStaked",
   });
 
-  const balance = data as bigint | undefined;
+  const total = data as bigint | undefined;
   return {
-    totalStaked: balance,
-    totalStakedFormatted: balance ? formatUnits(balance, 18) : "0",
+    totalStaked: total,
+    totalStakedFormatted: total ? formatUnits(total, 18) : "0",
     refetch,
     isLoading,
   };
