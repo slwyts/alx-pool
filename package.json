@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:testnet": "tsx scripts/dev-testnet.ts",
-    "build": "npx hardhat compile && dotenv -e .env.prod -- next build",
+    "build": "npx hardhat compile && dotenv -e .env.production -- next build",
     "start": "next start",
     "lint": "eslint",
     "test": "tsx --test test/*.ts",
