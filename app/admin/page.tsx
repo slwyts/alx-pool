@@ -1,11 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { ShieldCheck, Zap, Settings, Loader2, AlertTriangle, Info, Download, Copy, Megaphone } from 'lucide-react';
+import { ShieldCheck, Zap, Settings, Loader2, AlertTriangle, Info, Download, Copy, Megaphone, Upload, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { useTranslation } from '@/lib/hooks';
 import { useAccount } from 'wagmi';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   usePoolConfig,
   useAdminStakeForUser,
@@ -38,6 +38,12 @@ export default function AdminPage() {
 
   // 手续费表单
   const [feeRate, setFeeRate] = useState(0);
+
+  // 批量导入
+  const [batchInput, setBatchInput] = useState('');
+  const [batchList, setBatchList] = useState<{ address: string; amount: string; status: 'pending' | 'processing' | 'success' | 'error' }[]>([]);
+  const [isBatchProcessing, setIsBatchProcessing] = useState(false);
+  const batchIndexRef = useRef(0);
 
   // 合约操作
   const {
@@ -144,6 +150,56 @@ export default function AdminPage() {
   const handleSetFeeRate = () => {
     setWithdrawFeeRate(feeRate);
   };
+
+  // 解析批量输入
+  const parseBatchInput = () => {
+    const lines = batchInput.trim().split('\n').filter(line => line.trim());
+    const parsed = lines.map(line => {
+      const parts = line.trim().split(/\s+/);
+      const address = parts[0] || '';
+      const amount = parts[1] || '0';
+      return { address, amount, status: 'pending' as const };
+    }).filter(item => item.address.startsWith('0x') && parseFloat(item.amount) > 0);
+    setBatchList(parsed);
+    batchIndexRef.current = 0;
+  };
+
+  // 批量处理 - 逐条发起交易
+  const handleBatchDistribute = async () => {
+    if (batchList.length === 0) {
+      showToast(t('toast_no_batch_data') || '请先解析数据');
+      return;
+    }
+    setIsBatchProcessing(true);
+    batchIndexRef.current = 0;
+    // 开始处理第一条
+    processNextBatch();
+  };
+
+  const processNextBatch = () => {
+    const index = batchIndexRef.current;
+    if (index >= batchList.length) {
+      setIsBatchProcessing(false);
+      showToast(t('toast_batch_complete') || '批量处理完成');
+      // 清空输入
+      setBatchInput('');
+      setBatchList([]);
+      return;
+    }
+    const item = batchList[index];
+    setBatchList(prev => prev.map((p, i) => i === index ? { ...p, status: 'processing' } : p));
+    adminStake(item.address as `0x${string}`, item.amount);
+  };
+
+  // 监听单条交易成功，继续下一条
+  useEffect(() => {
+    if (adminStakeSuccess && isBatchProcessing) {
+      setBatchList(prev => prev.map((p, i) => i === batchIndexRef.current ? { ...p, status: 'success' } : p));
+      batchIndexRef.current += 1;
+      // 延迟一下再处理下一条
+      setTimeout(() => processNextBatch(), 500);
+    }
+  }, [adminStakeSuccess]);
 
   // 复制地址
   const copyToClipboard = (text: string) => {
@@ -278,6 +334,67 @@ export default function AdminPage() {
             {isAdminStaking && <Loader2 className="w-4 h-4 animate-spin" />}
             {t('admin_btn_submit')}
           </button>
+        </div>
+      </div>
+
+      {/* 批量导入 */}
+      <div className="glass-card admin-card rounded-2xl p-6">
+        <h3 className="text-sm font-bold text-gray-300 mb-4 flex items-center gap-2">
+          <Upload className="w-4 h-4 text-purple-500" />
+          <span>{t('batch_import') || '批量导入'}</span>
+        </h3>
+
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">{t('batch_input_hint') || '粘贴数据 (每行: 地址 金额)'}</label>
+            <textarea
+              value={batchInput}
+              onChange={(e) => setBatchInput(e.target.value)}
+              placeholder="0x123...abc    1000.00&#10;0x456...def    2000.00"
+              rows={6}
+              className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-sm text-white font-mono focus:border-purple-500/50 resize-none"
+            />
+          </div>
+          <button
+            onClick={parseBatchInput}
+            className="w-full border border-purple-500/30 bg-purple-500/10 text-purple-400 font-bold py-2 rounded-lg hover:bg-purple-500/20 transition"
+          >
+            {t('btn_parse') || '解析数据'} ({batchInput.trim().split('\n').filter(l => l.trim()).length} {t('lines') || '行'})
+          </button>
+
+          {batchList.length > 0 && (
+            <>
+              <div className="max-h-60 overflow-y-auto space-y-2 border border-white/5 rounded-lg p-2">
+                {batchList.map((item, index) => (
+                  <div key={index} className="flex items-center justify-between bg-black/30 p-2 rounded text-xs">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <span className="text-gray-500">#{index + 1}</span>
+                      <span className="font-mono text-white truncate">{item.address.slice(0, 10)}...{item.address.slice(-6)}</span>
+                      <span className="font-tech text-emerald-400">{parseFloat(item.amount).toLocaleString()}</span>
+                    </div>
+                    <div className="ml-2">
+                      {item.status === 'pending' && <Clock className="w-4 h-4 text-gray-500" />}
+                      {item.status === 'processing' && <Loader2 className="w-4 h-4 text-yellow-500 animate-spin" />}
+                      {item.status === 'success' && <CheckCircle className="w-4 h-4 text-emerald-500" />}
+                      {item.status === 'error' && <XCircle className="w-4 h-4 text-red-500" />}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center justify-between text-xs text-gray-400">
+                <span>{t('total_records') || '共'} {batchList.length} {t('records') || '条'}</span>
+                <span>{t('total_amount') || '总金额'}: {batchList.reduce((sum, item) => sum + parseFloat(item.amount), 0).toLocaleString()} ALX</span>
+              </div>
+              <button
+                onClick={handleBatchDistribute}
+                disabled={isBatchProcessing}
+                className="w-full bg-purple-600 hover:bg-purple-500 disabled:bg-gray-700 text-white font-bold py-3 rounded-lg shadow-lg shadow-purple-900/20 transition flex items-center justify-center gap-2"
+              >
+                {isBatchProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
+                {isBatchProcessing ? (t('batch_processing') || '处理中...') : (t('btn_batch_execute') || '开始批量执行')}
+              </button>
+            </>
+          )}
         </div>
       </div>
 

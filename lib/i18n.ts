@@ -95,7 +95,17 @@ export const i18n = {
     btn_set_fee: '设置手续费',
     toast_fee_updated: '手续费已更新！',
     exchange_altb: '兑换ALTB',
-    feature_not_available: '功能暂未开放'
+    feature_not_available: '功能暂未开放',
+    batch_import: '批量导入',
+    batch_input_hint: '粘贴数据 (每行: 地址 金额)',
+    btn_parse: '解析数据',
+    lines: '行',
+    total_records: '共',
+    total_amount: '总金额',
+    btn_batch_execute: '开始批量执行',
+    batch_processing: '处理中...',
+    toast_no_batch_data: '请先解析数据',
+    toast_batch_complete: '批量处理完成'
   },
   en: {
     nav_stake: 'Stake',
@@ -193,7 +203,17 @@ export const i18n = {
     btn_set_fee: 'Set Fee Rate',
     toast_fee_updated: 'Fee rate updated!',
     exchange_altb: 'Exchange ALTB',
-    feature_not_available: 'Feature not available yet'
+    feature_not_available: 'Feature not available yet',
+    batch_import: 'Batch Import',
+    batch_input_hint: 'Paste data (per line: address amount)',
+    btn_parse: 'Parse Data',
+    lines: 'lines',
+    total_records: 'Total',
+    total_amount: 'Total Amount',
+    btn_batch_execute: 'Start Batch Execute',
+    batch_processing: 'Processing...',
+    toast_no_batch_data: 'Please parse data first',
+    toast_batch_complete: 'Batch processing complete'
   }
 } as const;
 
