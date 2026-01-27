@@ -163,6 +163,7 @@ function StakeRecordCard({
 
 export default function MinePage() {
   const { t } = useTranslation();
+  const { showToast } = useAppStore();
   const { address, isConnected } = useAccount();
   const poolConfig = usePoolConfig();
   const blockTime = useBlockTimestamp();
@@ -235,6 +236,14 @@ export default function MinePage() {
           </div>
         </div>
       </div>
+
+      {/* 兑换ALTB按钮 */}
+      <button
+        onClick={() => showToast(t('feature_not_available') || '功能暂未开放')}
+        className="w-full py-3 rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-400 text-sm font-bold hover:bg-blue-500/20 transition"
+      >
+        {t('exchange_altb') || '兑换ALTB'}
+      </button>
 
       {/* 管理员入口 - 仅 owner 可见 */}
       {poolConfig.owner && address && poolConfig.owner.toLowerCase() === address.toLowerCase() && (

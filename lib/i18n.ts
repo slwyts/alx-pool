@@ -92,7 +92,9 @@ export const i18n = {
     withdraw_fee_setting: '提现手续费设置',
     fee_rate: '手续费率',
     btn_set_fee: '设置手续费',
-    toast_fee_updated: '手续费已更新！'
+    toast_fee_updated: '手续费已更新！',
+    exchange_altb: '兑换ALTB',
+    feature_not_available: '功能暂未开放'
   },
   en: {
     nav_stake: 'Stake',
@@ -187,7 +189,9 @@ export const i18n = {
     withdraw_fee_setting: 'Withdraw Fee Setting',
     fee_rate: 'Fee Rate',
     btn_set_fee: 'Set Fee Rate',
-    toast_fee_updated: 'Fee rate updated!'
+    toast_fee_updated: 'Fee rate updated!',
+    exchange_altb: 'Exchange ALTB',
+    feature_not_available: 'Feature not available yet'
   }
 } as const;
 
