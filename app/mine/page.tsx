@@ -102,24 +102,33 @@ function StakeRecordCard({
         </span>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 text-xs mb-3">
+      <div className="grid grid-cols-2 gap-2 text-xs mb-3">
         <div>
           <div className="text-gray-500 scale-90 origin-left">{t('record_principal')}</div>
           <div className="font-tech text-white text-base">
             {parseFloat(record.principalFormatted).toLocaleString()}
           </div>
         </div>
-        <div>
-          <div className="text-gray-500 scale-90 origin-left">{t('record_return')}</div>
+        <div className="text-right">
+          <div className="text-gray-500 scale-90 origin-right">{t('record_return')}</div>
           <div className="font-tech text-white text-base">
             {parseFloat(record.totalRewardFormatted).toLocaleString()}
           </div>
         </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+        <div>
+          <div className="text-gray-500 scale-90 origin-left">{t('claimed_amount')}</div>
+          <div className="font-tech text-emerald-400 text-base">
+            {parseFloat(record.claimedAmountFormatted).toLocaleString()}
+          </div>
+        </div>
         <div className="text-right">
-          <div className="text-gray-500 scale-90 origin-right">{isCompleted ? t('claimed_total') || 'Claimed' : t('record_next')}</div>
+          <div className="text-gray-500 scale-90 origin-right">{isCompleted ? t('status_completed') || 'Completed' : t('record_next')}</div>
           <div className="font-tech text-white text-base">
             {isCompleted
-              ? parseFloat(record.claimedAmountFormatted).toLocaleString()
+              ? '-'
               : isLocked
                 ? lockEndDate.toLocaleDateString()
                 : t('now') || 'Now'}
