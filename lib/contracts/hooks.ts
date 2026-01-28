@@ -287,6 +287,25 @@ export function useAdminStakeForUser() {
   return { adminStake, hash, isPending, isConfirming, isSuccess, error };
 }
 
+/** 管理员批量代客质押 */
+export function useAdminBatchStakeForUsers() {
+  const { writeContract, data: hash, isPending, error } = useWriteContract();
+
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+
+  const adminBatchStake = (users: `0x${string}`[], amounts: string[]) => {
+    const amountsWei = amounts.map(a => parseUnits(a, 18));
+    writeContract({
+      address: contractAddresses.stakingPool,
+      abi: stakingPoolAbi,
+      functionName: "adminBatchStakeForUsers",
+      args: [users, amountsWei],
+    });
+  };
+
+  return { adminBatchStake, hash, isPending, isConfirming, isSuccess, error };
+}
+
 /** 管理员更新配置 */
 export function useUpdateConfig() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();

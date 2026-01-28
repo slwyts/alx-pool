@@ -72,6 +72,14 @@ contract ALXStakingPool is Ownable, ReentrancyGuard {
         _createRecord(_user, _amount);
     }
 
+    function adminBatchStakeForUsers(address[] calldata _users, uint256[] calldata _amounts) external onlyOwner {
+        require(_users.length == _amounts.length, "Length mismatch");
+        require(_users.length > 0, "Empty array");
+        for (uint256 i = 0; i < _users.length; i++) {
+            _createRecord(_users[i], _amounts[i]);
+        }
+    }
+
     function updateConfig(
         uint256 _bonusRate,
         uint256 _lockDays,

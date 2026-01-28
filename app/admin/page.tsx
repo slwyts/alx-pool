@@ -1,14 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { ShieldCheck, Zap, Settings, Loader2, AlertTriangle, Info, Download, Copy, Megaphone, Upload, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { ShieldCheck, Zap, Settings, Loader2, AlertTriangle, Info, Download, Copy, Megaphone, Upload } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { useTranslation } from '@/lib/hooks';
 import { useAccount } from 'wagmi';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   usePoolConfig,
   useAdminStakeForUser,
+  useAdminBatchStakeForUsers,
   useUpdateConfig,
   useEmergencyWithdraw,
   useALXBalance,
@@ -41,9 +42,7 @@ export default function AdminPage() {
 
   // 批量导入
   const [batchInput, setBatchInput] = useState('');
-  const [batchList, setBatchList] = useState<{ address: string; amount: string; status: 'pending' | 'processing' | 'success' | 'error' }[]>([]);
-  const [isBatchProcessing, setIsBatchProcessing] = useState(false);
-  const batchIndexRef = useRef(0);
+  const [batchList, setBatchList] = useState<{ address: string; amount: string }[]>([]);
 
   // 合约操作
   const {
@@ -51,6 +50,12 @@ export default function AdminPage() {
     isPending: isAdminStaking,
     isSuccess: adminStakeSuccess,
   } = useAdminStakeForUser();
+
+  const {
+    adminBatchStake,
+    isPending: isBatchStaking,
+    isSuccess: batchStakeSuccess,
+  } = useAdminBatchStakeForUsers();
 
   const {
     updateConfig,
@@ -158,48 +163,30 @@ export default function AdminPage() {
       const parts = line.trim().split(/\s+/);
       const address = parts[0] || '';
       const amount = parts[1] || '0';
-      return { address, amount, status: 'pending' as const };
+      return { address, amount };
     }).filter(item => item.address.startsWith('0x') && parseFloat(item.amount) > 0);
     setBatchList(parsed);
-    batchIndexRef.current = 0;
   };
 
-  // 批量处理 - 逐条发起交易
-  const handleBatchDistribute = async () => {
+  // 批量处理 - 一笔交易处理所有
+  const handleBatchDistribute = () => {
     if (batchList.length === 0) {
       showToast(t('toast_no_batch_data') || '请先解析数据');
       return;
     }
-    setIsBatchProcessing(true);
-    batchIndexRef.current = 0;
-    // 开始处理第一条
-    processNextBatch();
+    const addresses = batchList.map(item => item.address as `0x${string}`);
+    const amounts = batchList.map(item => item.amount);
+    adminBatchStake(addresses, amounts);
   };
 
-  const processNextBatch = () => {
-    const index = batchIndexRef.current;
-    if (index >= batchList.length) {
-      setIsBatchProcessing(false);
+  // 监听批量交易成功
+  useEffect(() => {
+    if (batchStakeSuccess) {
       showToast(t('toast_batch_complete') || '批量处理完成');
-      // 清空输入
       setBatchInput('');
       setBatchList([]);
-      return;
     }
-    const item = batchList[index];
-    setBatchList(prev => prev.map((p, i) => i === index ? { ...p, status: 'processing' } : p));
-    adminStake(item.address as `0x${string}`, item.amount);
-  };
-
-  // 监听单条交易成功，继续下一条
-  useEffect(() => {
-    if (adminStakeSuccess && isBatchProcessing) {
-      setBatchList(prev => prev.map((p, i) => i === batchIndexRef.current ? { ...p, status: 'success' } : p));
-      batchIndexRef.current += 1;
-      // 延迟一下再处理下一条
-      setTimeout(() => processNextBatch(), 500);
-    }
-  }, [adminStakeSuccess]);
+  }, [batchStakeSuccess]);
 
   // 复制地址
   const copyToClipboard = (text: string) => {
@@ -372,12 +359,6 @@ export default function AdminPage() {
                       <span className="font-mono text-white truncate">{item.address.slice(0, 10)}...{item.address.slice(-6)}</span>
                       <span className="font-tech text-emerald-400">{parseFloat(item.amount).toLocaleString()}</span>
                     </div>
-                    <div className="ml-2">
-                      {item.status === 'pending' && <Clock className="w-4 h-4 text-gray-500" />}
-                      {item.status === 'processing' && <Loader2 className="w-4 h-4 text-yellow-500 animate-spin" />}
-                      {item.status === 'success' && <CheckCircle className="w-4 h-4 text-emerald-500" />}
-                      {item.status === 'error' && <XCircle className="w-4 h-4 text-red-500" />}
-                    </div>
                   </div>
                 ))}
               </div>
@@ -387,11 +368,11 @@ export default function AdminPage() {
               </div>
               <button
                 onClick={handleBatchDistribute}
-                disabled={isBatchProcessing}
+                disabled={isBatchStaking}
                 className="w-full bg-purple-600 hover:bg-purple-500 disabled:bg-gray-700 text-white font-bold py-3 rounded-lg shadow-lg shadow-purple-900/20 transition flex items-center justify-center gap-2"
               >
-                {isBatchProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
-                {isBatchProcessing ? (t('batch_processing') || '处理中...') : (t('btn_batch_execute') || '开始批量执行')}
+                {isBatchStaking && <Loader2 className="w-4 h-4 animate-spin" />}
+                {isBatchStaking ? (t('batch_processing') || '处理中...') : (t('btn_batch_execute') || '开始批量执行')}
               </button>
             </>
           )}
