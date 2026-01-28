@@ -306,6 +306,61 @@ export function useAdminBatchStakeForUsers() {
   return { adminBatchStake, hash, isPending, isConfirming, isSuccess, error };
 }
 
+/** 管理员查询用户所有仓位 */
+export function useAdminGetUserStakes(userAddress: `0x${string}` | undefined) {
+  const { data, isLoading, refetch } = useReadContract({
+    address: contractAddresses.stakingPool,
+    abi: stakingPoolAbi,
+    functionName: "adminGetUserStakes",
+    args: userAddress ? [userAddress] : undefined,
+    query: { enabled: !!userAddress },
+  });
+
+  const stakes = data as Array<{
+    id: bigint;
+    user: `0x${string}`;
+    principal: bigint;
+    totalReward: bigint;
+    startTime: bigint;
+    claimedAmount: bigint;
+    lockDuration: bigint;
+    linearDuration: bigint;
+    initialUnlockRate: bigint;
+  }> | undefined;
+
+  const formattedStakes = stakes?.filter(s => s.user !== '0x0000000000000000000000000000000000000000').map(s => ({
+    id: Number(s.id),
+    user: s.user,
+    principal: formatUnits(s.principal, 18),
+    totalReward: formatUnits(s.totalReward, 18),
+    startTime: Number(s.startTime),
+    claimedAmount: formatUnits(s.claimedAmount, 18),
+    lockDuration: Number(s.lockDuration) / 86400,
+    linearDuration: Number(s.linearDuration) / 86400,
+    initialUnlockRate: Number(s.initialUnlockRate) / 10000,
+  }));
+
+  return { stakes: formattedStakes, isLoading, refetch };
+}
+
+/** 管理员强制关闭仓位 */
+export function useAdminCloseStake() {
+  const { writeContract, data: hash, isPending, error } = useWriteContract();
+
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+
+  const closeStake = (stakeId: number) => {
+    writeContract({
+      address: contractAddresses.stakingPool,
+      abi: stakingPoolAbi,
+      functionName: "adminCloseStake",
+      args: [BigInt(stakeId)],
+    });
+  };
+
+  return { closeStake, hash, isPending, isConfirming, isSuccess, error };
+}
+
 /** 管理员更新配置 */
 export function useUpdateConfig() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();

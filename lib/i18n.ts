@@ -105,7 +105,20 @@ export const i18n = {
     btn_batch_execute: '开始批量执行',
     batch_processing: '处理中...',
     toast_no_batch_data: '请先解析数据',
-    toast_batch_complete: '批量处理完成'
+    toast_batch_complete: '批量处理完成',
+    query_user_stakes: '查询用户仓位',
+    user_address: '用户地址',
+    btn_query: '查询',
+    found_stakes: '找到',
+    stakes: '个仓位',
+    close_stake: '关闭仓位',
+    principal: '本金',
+    total_reward: '总额',
+    claimed: '已领',
+    start_time: '开始',
+    no_stakes_found: '未找到仓位',
+    confirm_close_stake: '确定要关闭此仓位吗？此操作不可撤销。',
+    toast_stake_closed: '仓位已关闭'
   },
   en: {
     nav_stake: 'Stake',
@@ -213,7 +226,20 @@ export const i18n = {
     btn_batch_execute: 'Start Batch Execute',
     batch_processing: 'Processing...',
     toast_no_batch_data: 'Please parse data first',
-    toast_batch_complete: 'Batch processing complete'
+    toast_batch_complete: 'Batch processing complete',
+    query_user_stakes: 'Query User Stakes',
+    user_address: 'User Address',
+    btn_query: 'Query',
+    found_stakes: 'Found',
+    stakes: 'stakes',
+    close_stake: 'Close Stake',
+    principal: 'Principal',
+    total_reward: 'Total',
+    claimed: 'Claimed',
+    start_time: 'Start',
+    no_stakes_found: 'No stakes found',
+    confirm_close_stake: 'Are you sure to close this stake? This action cannot be undone.',
+    toast_stake_closed: 'Stake closed'
   }
 } as const;
 

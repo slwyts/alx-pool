@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShieldCheck, Zap, Settings, Loader2, AlertTriangle, Info, Download, Copy, Megaphone, Upload } from 'lucide-react';
+import { ShieldCheck, Zap, Settings, Loader2, AlertTriangle, Info, Download, Copy, Megaphone, Upload, Search, Trash2 } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { useTranslation } from '@/lib/hooks';
 import { useAccount } from 'wagmi';
@@ -10,6 +10,8 @@ import {
   usePoolConfig,
   useAdminStakeForUser,
   useAdminBatchStakeForUsers,
+  useAdminGetUserStakes,
+  useAdminCloseStake,
   useUpdateConfig,
   useEmergencyWithdraw,
   useALXBalance,
@@ -44,6 +46,10 @@ export default function AdminPage() {
   const [batchInput, setBatchInput] = useState('');
   const [batchList, setBatchList] = useState<{ address: string; amount: string }[]>([]);
 
+  // 查询仓位
+  const [queryAddr, setQueryAddr] = useState('');
+  const [queryAddrConfirmed, setQueryAddrConfirmed] = useState<`0x${string}` | undefined>(undefined);
+
   // 合约操作
   const {
     adminStake,
@@ -56,6 +62,18 @@ export default function AdminPage() {
     isPending: isBatchStaking,
     isSuccess: batchStakeSuccess,
   } = useAdminBatchStakeForUsers();
+
+  const {
+    stakes: userStakes,
+    isLoading: isLoadingStakes,
+    refetch: refetchStakes,
+  } = useAdminGetUserStakes(queryAddrConfirmed);
+
+  const {
+    closeStake,
+    isPending: isClosingStake,
+    isSuccess: closeStakeSuccess,
+  } = useAdminCloseStake();
 
   const {
     updateConfig,
@@ -114,6 +132,13 @@ export default function AdminPage() {
       showToast(t('toast_fee_updated') || 'Fee rate updated');
     }
   }, [setFeeSuccess, showToast, t]);
+
+  useEffect(() => {
+    if (closeStakeSuccess) {
+      showToast(t('toast_stake_closed') || '仓位已关闭');
+      refetchStakes();
+    }
+  }, [closeStakeSuccess, showToast, t, refetchStakes]);
 
   // 检查是否是 owner
   const isOwner =
@@ -177,6 +202,22 @@ export default function AdminPage() {
     const addresses = batchList.map(item => item.address as `0x${string}`);
     const amounts = batchList.map(item => item.amount);
     adminBatchStake(addresses, amounts);
+  };
+
+  // 查询用户仓位
+  const handleQueryStakes = () => {
+    if (!queryAddr || !queryAddr.startsWith('0x')) {
+      showToast(t('toast_invalid_address') || 'Invalid address');
+      return;
+    }
+    setQueryAddrConfirmed(queryAddr as `0x${string}`);
+  };
+
+  // 关闭仓位
+  const handleCloseStake = (stakeId: number) => {
+    if (confirm(t('confirm_close_stake') || `确定要关闭仓位 #${stakeId} 吗？此操作不可撤销。`)) {
+      closeStake(stakeId);
+    }
   };
 
   // 监听批量交易成功
@@ -375,6 +416,80 @@ export default function AdminPage() {
                 {isBatchStaking ? (t('batch_processing') || '处理中...') : (t('btn_batch_execute') || '开始批量执行')}
               </button>
             </>
+          )}
+        </div>
+      </div>
+
+      {/* 查询用户仓位 */}
+      <div className="glass-card admin-card rounded-2xl p-6">
+        <h3 className="text-sm font-bold text-gray-300 mb-4 flex items-center gap-2">
+          <Search className="w-4 h-4 text-cyan-500" />
+          <span>{t('query_user_stakes') || '查询用户仓位'}</span>
+        </h3>
+
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">{t('user_address') || '用户地址'}</label>
+            <input
+              type="text"
+              value={queryAddr}
+              onChange={(e) => setQueryAddr(e.target.value)}
+              placeholder="0x..."
+              className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-sm text-white font-mono focus:border-cyan-500/50"
+            />
+          </div>
+          <button
+            onClick={handleQueryStakes}
+            disabled={isLoadingStakes}
+            className="w-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 font-bold py-2 rounded-lg hover:bg-cyan-500/20 transition flex items-center justify-center gap-2"
+          >
+            {isLoadingStakes && <Loader2 className="w-4 h-4 animate-spin" />}
+            {t('btn_query') || '查询'}
+          </button>
+
+          {userStakes && userStakes.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-xs text-gray-400">{t('found_stakes') || '找到'} {userStakes.length} {t('stakes') || '个仓位'}</div>
+              <div className="max-h-80 overflow-y-auto space-y-2">
+                {userStakes.map((stake) => (
+                  <div key={stake.id} className="bg-black/30 p-3 rounded-lg border border-white/5">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-bold text-white">#{stake.id}</span>
+                      <button
+                        onClick={() => handleCloseStake(stake.id)}
+                        disabled={isClosingStake}
+                        className="p-1.5 bg-red-500/20 hover:bg-red-500/30 rounded text-red-400 transition"
+                        title={t('close_stake') || '关闭仓位'}
+                      >
+                        {isClosingStake ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-gray-500">{t('principal') || '本金'}: </span>
+                        <span className="font-tech text-white">{parseFloat(stake.principal).toLocaleString()}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">{t('total_reward') || '总额'}: </span>
+                        <span className="font-tech text-emerald-400">{parseFloat(stake.totalReward).toLocaleString()}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">{t('claimed') || '已领'}: </span>
+                        <span className="font-tech text-yellow-400">{parseFloat(stake.claimedAmount).toLocaleString()}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">{t('start_time') || '开始'}: </span>
+                        <span className="text-gray-300">{new Date(stake.startTime * 1000).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {userStakes && userStakes.length === 0 && queryAddrConfirmed && (
+            <div className="text-center text-gray-500 py-4">{t('no_stakes_found') || '未找到仓位'}</div>
           )}
         </div>
       </div>

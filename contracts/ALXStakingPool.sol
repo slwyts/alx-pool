@@ -29,7 +29,7 @@ contract ALXStakingPool is Ownable, ReentrancyGuard {
     uint256 public initialUnlockRate = 1000;
     uint256 public lockDuration = 90 days;
     uint256 public linearDuration = 270 days;
-    uint256 public withdrawFeeRate = 500; // 提现手续费率 (基点, 500 = 5%)
+    uint256 public withdrawFeeRate = 500;
 
     mapping(address => uint256[]) public userStakeIds;
     mapping(uint256 => StakeRecord) public stakes;
@@ -37,6 +37,7 @@ contract ALXStakingPool is Ownable, ReentrancyGuard {
     event Staked(address indexed user, uint256 indexed id, uint256 amount, uint256 totalReward);
     event Claimed(address indexed user, uint256 indexed id, uint256 amount);
     event ConfigUpdated(uint256 bonus, uint256 lockDay, uint256 linearDay, uint256 initialRate);
+    event StakeClosed(address indexed user, uint256 indexed id, uint256 principal);
 
     constructor(address _tokenAddress, address _owner) Ownable(_owner) {
         require(_tokenAddress != address(0), "Invalid token");
@@ -78,6 +79,32 @@ contract ALXStakingPool is Ownable, ReentrancyGuard {
         for (uint256 i = 0; i < _users.length; i++) {
             _createRecord(_users[i], _amounts[i]);
         }
+    }
+
+    function adminGetUserStakes(address _user) external view returns (StakeRecord[] memory) {
+        uint256[] memory ids = userStakeIds[_user];
+        StakeRecord[] memory records = new StakeRecord[](ids.length);
+        for (uint256 i = 0; i < ids.length; i++) {
+            records[i] = stakes[ids[i]];
+        }
+        return records;
+    }
+
+    function adminCloseStake(uint256 _stakeId) external onlyOwner {
+        StakeRecord storage record = stakes[_stakeId];
+        require(record.user != address(0), "Stake not found");
+
+        address user = record.user;
+        uint256 principal = record.principal;
+
+        totalStaked -= principal;
+
+        record.user = address(0);
+        record.principal = 0;
+        record.totalReward = 0;
+        record.claimedAmount = 0;
+
+        emit StakeClosed(user, _stakeId, principal);
     }
 
     function updateConfig(
